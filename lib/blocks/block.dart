@@ -7,6 +7,7 @@ class Block {
   List<Point> points = [Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0)];
   late Point rotationCenter;
   late Color color;
+  int movementNum = 0;
 
   void move(MoveDir dir) {
     switch (dir) {
@@ -15,6 +16,7 @@ class Block {
           points.forEach((p) {
             p.x--;
           });
+          movementNum++;
         }
         break;
       case MoveDir.right:
@@ -22,6 +24,7 @@ class Block {
           points.forEach((p) {
             p.x++;
           });
+          movementNum++;
         }
         break;
       case MoveDir.down:
@@ -50,7 +53,9 @@ class Block {
     });
     if (!canMoveToSide(0)) {
       rotateLeft();
+      movementNum--;
     }
+    movementNum++;
   }
 
   void rotateLeft() {
@@ -61,7 +66,9 @@ class Block {
     });
     if (!canMoveToSide(0)) {
       rotateRight();
+      movementNum--;
     }
+    movementNum++;
   }
 
   bool isAtBottom() {
