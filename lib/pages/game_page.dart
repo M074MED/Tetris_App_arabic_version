@@ -8,7 +8,6 @@ import 'package:tetris_app/blocks/Iblock.dart';
 import 'package:tetris_app/blocks/Lblock.dart';
 import 'package:tetris_app/blocks/alivePoints.dart';
 import 'package:tetris_app/blocks/block.dart';
-import 'package:tetris_app/main.dart';
 import 'package:tetris_app/pages/helper.dart';
 
 import '../blocks/Jblock.dart';
@@ -16,7 +15,6 @@ import '../blocks/SQblock.dart';
 import '../blocks/Sblock.dart';
 import '../blocks/Tblock.dart';
 import '../blocks/Zblock.dart';
-import '../blocks/point.dart';
 
 enum LastButtonPressed { left, right, rotateLeft, rotateRight, none }
 enum MoveDir { left, right, down }
@@ -89,6 +87,7 @@ class _GamePageState extends State<GamePage> {
                 currentBlock!.isAtBottom() ||
                 currentBlock!.name == "SQBlock") {
               currentBlock!.rotateRight();
+              currentBlock!.movementNum--;
             }
             break;
           case LastButtonPressed.rotateRight:
@@ -97,6 +96,7 @@ class _GamePageState extends State<GamePage> {
                 currentBlock!.isAtBottom() ||
                 currentBlock!.name == "SQBlock") {
               currentBlock!.rotateLeft();
+              currentBlock!.movementNum--;
             }
             break;
           default:
@@ -283,8 +283,11 @@ class _GamePageState extends State<GamePage> {
         borderColor = Colors.green;
       });
       HapticFeedback.lightImpact();
-      HapticFeedback.lightImpact();
-      print("vibrate");
+      print("vibrate1");
+      Future.delayed(const Duration(milliseconds: 200), () {
+        HapticFeedback.lightImpact();
+        print("vibrate2");
+      });
     } else if (currentBlock!.movementNum < 7) {
       setState(() {
         borderColor = Colors.green;
