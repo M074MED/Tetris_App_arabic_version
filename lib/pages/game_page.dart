@@ -153,6 +153,29 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  void getPitsAndWells() {
+    List<Point> allPoints = [];
+    List<Point> pits = [];
+    List<Point> wells = [];
+    alivePoints.forEach((point) {
+      allPoints.add(Point(point.x, point.y));
+    });
+    for (var currentRow = 0; currentRow < maxHeight; currentRow++) {
+      int y = (boardHeight - 1) - currentRow;
+      for (var i = 0; i < boardWidth; i++) {
+        Point currentPoint = Point(i, y);
+        if ((!allPoints.contains(currentPoint)) &&
+            allPoints.contains(Point(i, y - 1))) {
+          pits.add(currentPoint);
+        } else if ((!allPoints.contains(currentPoint)) &&
+            (!allPoints.contains(Point(i, y - 1)))) {
+          wells.add(currentPoint);
+        }
+      }
+    }
+    print("Pits num: ${pits.length}, Wells num: ${wells.length}");
+  }
+
   bool playerLost() {
     bool value = false;
     alivePoints.forEach((point) {
@@ -165,21 +188,21 @@ class _GamePageState extends State<GamePage> {
 
   void highestPoint() {
     Map<String, List<int>?> pointsY = {
-      "1 column": [20],
-      "2 column": [20],
-      "3 column": [20],
-      "4 column": [20],
-      "5 column": [20],
-      "6 column": [20],
-      "7 column": [20],
-      "8 column": [20],
-      "9 column": [20],
-      "10 column": [20],
-      "11 column": [20],
-      "12 column": [20],
-      "13 column": [20],
-      "14 column": [20],
-      "15 column": [20],
+      "1 column": [boardHeight],
+      "2 column": [boardHeight],
+      "3 column": [boardHeight],
+      "4 column": [boardHeight],
+      "5 column": [boardHeight],
+      "6 column": [boardHeight],
+      "7 column": [boardHeight],
+      "8 column": [boardHeight],
+      "9 column": [boardHeight],
+      "10 column": [boardHeight],
+      "11 column": [boardHeight],
+      "12 column": [boardHeight],
+      "13 column": [boardHeight],
+      "14 column": [boardHeight],
+      "15 column": [boardHeight],
     };
     alivePoints.forEach((point) {
       switch (point.x) {
@@ -232,8 +255,8 @@ class _GamePageState extends State<GamePage> {
       }
     });
     List<int> mainPoints = [];
-    for (var i = 1; i <= 15; i++) {
-      mainPoints.add(20 - pointsY["$i column"]!.reduce(min));
+    for (var i = 1; i <= boardWidth; i++) {
+      mainPoints.add(boardHeight - pointsY["$i column"]!.reduce(min));
     }
     Map<String, int> Cds = {
       "1-2": 0,
@@ -252,9 +275,9 @@ class _GamePageState extends State<GamePage> {
       "14-15": 0,
       "15-15": 0,
     };
-    for (int i = 1; i <= 15; i++) {
-      Cds["${i}-${i + 1 == 16 ? 15 : i + 1}"] =
-          mainPoints[i == 15 ? 14 : i] - mainPoints[i - 1];
+    for (int i = 1; i <= boardWidth; i++) {
+      Cds["${i}-${i + 1 > boardWidth ? boardWidth : i + 1}"] =
+          mainPoints[i == boardWidth ? boardWidth - 1 : i] - mainPoints[i - 1];
     }
     print(Cds);
     meanHeight = mainPoints.average;
@@ -581,6 +604,7 @@ class _GamePageState extends State<GamePage> {
                             performAction = LastButtonPressed.rotateLeft;
                           });
                           highestPoint();
+                          getPitsAndWells();
                         },
                         child: const Icon(
                           Icons.rotate_left,
