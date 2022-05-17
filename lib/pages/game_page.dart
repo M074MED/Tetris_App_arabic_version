@@ -45,6 +45,7 @@ class _GamePageState extends State<GamePage> {
   Color? borderColor;
   double meanHeight = 0;
   int maxHeight = 0;
+  List<DateTime> d_timer = [];
 
   @override
   void initState() {
@@ -153,6 +154,26 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  void drawPattern() {
+    List<List<int>> pattern = [];
+    List<Point> allPoints = [];
+    alivePoints.forEach((point) {
+      allPoints.add(Point(point.x, point.y));
+    });
+    for (var y = boardHeight - 1; y >= 0; y--) {
+      List<int> row = [];
+      for (var x = 0; x < boardWidth; x++) {
+        if (allPoints.contains(Point(x, y))) {
+          row.add(1);
+        } else {
+          row.add(-1);
+        }
+      }
+      pattern.add(row);
+    }
+    print(pattern.reversed);
+  }
+
   void getPitsAndWells() {
     List<Point> allPoints = [];
     List<Point> pits = [];
@@ -162,13 +183,16 @@ class _GamePageState extends State<GamePage> {
     });
     for (var currentRow = 0; currentRow < maxHeight; currentRow++) {
       int y = (boardHeight - 1) - currentRow;
-      for (var i = 0; i < boardWidth; i++) {
-        Point currentPoint = Point(i, y);
+      for (var x = 0; x < boardWidth; x++) {
+        Point currentPoint = Point(x, y);
         if ((!allPoints.contains(currentPoint)) &&
-            allPoints.contains(Point(i, y - 1))) {
+            allPoints.contains(Point(x, y - 1))) {
           pits.add(currentPoint);
         } else if ((!allPoints.contains(currentPoint)) &&
-            (!allPoints.contains(Point(i, y - 1)))) {
+            (!allPoints.contains(Point(x, y - 1))) &&
+            (allPoints.contains(Point(x - 1, y)) ||
+                allPoints.contains(Point(x + 1, y)) ||
+                allPoints.contains(Point(x, y + 1)))) {
           wells.add(currentPoint);
         }
       }
@@ -180,6 +204,16 @@ class _GamePageState extends State<GamePage> {
     bool value = false;
     alivePoints.forEach((point) {
       if (point.y <= 0) {
+        d_timer.sort();
+        List<int> times = [];
+        for (var i = 0; i < d_timer.length; i++) {
+          times.add(
+              d_timer[i + 1 == d_timer.length ? d_timer.length - 1 : i + 1]
+                  .difference(d_timer[i])
+                  .inSeconds);
+        }
+        print(times);
+        print(times.average);
         value = true;
       }
     });
@@ -357,6 +391,9 @@ class _GamePageState extends State<GamePage> {
       changeBorderColor();
       // Save the block
       saveOldBlock();
+      // calculate data
+      highestPoint();
+      getPitsAndWells();
       // Draw new block
       setState(() {
         currentBlock!.movementNum = 0;
@@ -603,8 +640,8 @@ class _GamePageState extends State<GamePage> {
                           setState(() {
                             performAction = LastButtonPressed.rotateLeft;
                           });
-                          highestPoint();
-                          getPitsAndWells();
+                          drawPattern();
+                          d_timer.add(DateTime.now());
                         },
                         child: const Icon(
                           Icons.rotate_left,
@@ -618,6 +655,7 @@ class _GamePageState extends State<GamePage> {
                           setState(() {
                             performAction = LastButtonPressed.rotateRight;
                           });
+                          d_timer.add(DateTime.now());
                         },
                         child: const Icon(
                           Icons.rotate_right,
@@ -636,6 +674,7 @@ class _GamePageState extends State<GamePage> {
                           setState(() {
                             performAction = LastButtonPressed.left;
                           });
+                          d_timer.add(DateTime.now());
                         },
                         child: const Icon(
                           Icons.arrow_left,
@@ -649,6 +688,7 @@ class _GamePageState extends State<GamePage> {
                           setState(() {
                             performAction = LastButtonPressed.right;
                           });
+                          d_timer.add(DateTime.now());
                         },
                         child: const Icon(
                           Icons.arrow_right,
@@ -665,3 +705,39 @@ class _GamePageState extends State<GamePage> {
     );
   }
 }
+// [[1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, -1]]
+
+// [[-1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [1, 1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
+// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
+// [-1,
