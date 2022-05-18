@@ -22,7 +22,7 @@ enum MoveDir { left, right, down }
 // Global Variables
 const int boardWidth = 10;
 const int boardHeight = 20;
-const double pointSize = 20; // size in px
+const double pointSize = 25; // size in px
 const double width = boardWidth * pointSize;
 const double height = boardHeight * pointSize;
 const int gameSpeed = 400; // speed in milliseconds
@@ -40,6 +40,7 @@ class _GamePageState extends State<GamePage> {
   Block? currentBlock;
   Block? nextBlock;
   List<AlivePoint> alivePoints = [];
+  List<Point> alivePointsXY = [];
   int score = 0;
   bool gameOver = false;
   Color? borderColor;
@@ -115,6 +116,11 @@ class _GamePageState extends State<GamePage> {
         alivePoints.add(newPoint);
       });
     });
+    alivePoints.forEach((point) {
+      setState(() {
+        alivePointsXY.add(Point(point.x, point.y));
+      });
+    });
   }
 
   bool isAboveOldBlock({int Ydistance = 1}) {
@@ -156,17 +162,13 @@ class _GamePageState extends State<GamePage> {
 
   // TODO
   void drawPattern() {
-    List<Point> allPoints = [];
-    alivePoints.forEach((point) {
-      allPoints.add(Point(point.x, point.y));
-    });
     // pattern row div
     int pattern_r_div = 0;
     List<List<int>> pattern = [];
     for (var y = boardHeight - 1; y >= 0; y--) {
       List<int> row = [];
       for (var x = 0; x < boardWidth; x++) {
-        if (allPoints.contains(Point(x, y))) {
+        if (alivePointsXY.contains(Point(x, y))) {
           row.add(1);
         } else {
           row.add(0);
@@ -174,20 +176,22 @@ class _GamePageState extends State<GamePage> {
       }
       pattern.add(row);
     }
-    List temp = [];
+    List<int> temp = [];
     for (var y = 0; y < pattern.length; y++) {
       for (int i = 0; i < pattern[y].length; i++) {
         temp.add(pattern[y][i] +
             pattern[y + 1 == pattern.length ? pattern.length - 1 : y + 1][i]);
       }
     }
+    pattern_r_div = temp.where((item) => item == 1).length;
+
     // pattern column div
     int pattern_c_div = 0;
     List<List<int>> pattern2 = [];
     for (var x = 0; x < boardWidth; x++) {
       List<int> column = [];
       for (var y = boardHeight - 1; y >= 0; y--) {
-        if (allPoints.contains(Point(x, y))) {
+        if (alivePointsXY.contains(Point(x, y))) {
           column.add(1);
         } else {
           column.add(0);
@@ -195,7 +199,7 @@ class _GamePageState extends State<GamePage> {
       }
       pattern2.add(column);
     }
-    List temp2 = [];
+    List<int> temp2 = [];
     for (var y = 0; y < pattern2.length; y++) {
       for (int i = 0; i < pattern2[y].length; i++) {
         temp2.add(pattern2[y][i] +
@@ -203,43 +207,37 @@ class _GamePageState extends State<GamePage> {
                 [i]);
       }
     }
+    pattern_c_div = temp2.where((item) => item == 1).length;
+
     // weighted_cell
-    Map<String, double> weighted_cell = {};
+    Map<String, String> weighted_cell = {};
     for (var x = 0; x < pattern2.length; x++) {
       // TODO: boardHeight or columnHeight
       weighted_cell["column ${x + 1}"] =
-          (pattern2[x].where((item) => item == 1).length / boardHeight) * 100;
+          ((pattern2[x].where((item) => item == 1).length / boardHeight) * 100)
+              .toStringAsFixed(2);
     }
-    // print(temp);
-    print(weighted_cell);
-    print(temp2);
-    print(temp2.where((item) => item == 1).length);
-    // print(temp.where((item) => item == 1).length);
-    pattern_r_div = temp.where((item) => item == 1).length;
-    pattern_c_div = temp2.where((item) => item == 1).length;
-    print(pattern2);
-    print(pattern2.where((item) => item == 1).length);
+
+    print("weighted_cell (%): ${weighted_cell}");
+    print("pattern_r_div: ${pattern_r_div}");
+    print("pattern_c_div: ${pattern_c_div}");
   }
 
   void getPitsAndWells() {
-    List<Point> allPoints = [];
     List<Point> pits = [];
     List<Point> wells = [];
-    alivePoints.forEach((point) {
-      allPoints.add(Point(point.x, point.y));
-    });
     for (var currentRow = 0; currentRow < maxHeight; currentRow++) {
       int y = (boardHeight - 1) - currentRow;
       for (var x = 0; x < boardWidth; x++) {
         Point currentPoint = Point(x, y);
-        if ((!allPoints.contains(currentPoint)) &&
-            allPoints.contains(Point(x, y - 1))) {
+        if ((!alivePointsXY.contains(currentPoint)) &&
+            alivePointsXY.contains(Point(x, y - 1))) {
           pits.add(currentPoint);
-        } else if ((!allPoints.contains(currentPoint)) &&
-            (!allPoints.contains(Point(x, y - 1))) &&
-            (allPoints.contains(Point(x - 1, y)) ||
-                allPoints.contains(Point(x + 1, y)) ||
-                allPoints.contains(Point(x, y + 1)))) {
+        } else if ((!alivePointsXY.contains(currentPoint)) &&
+            (!alivePointsXY.contains(Point(x, y - 1))) &&
+            (alivePointsXY.contains(Point(x - 1, y)) ||
+                alivePointsXY.contains(Point(x + 1, y)) ||
+                alivePointsXY.contains(Point(x, y + 1)))) {
           wells.add(currentPoint);
         }
       }
@@ -259,8 +257,8 @@ class _GamePageState extends State<GamePage> {
                   .difference(d_timer[i])
                   .inSeconds);
         }
-        print(times);
-        print(times.average);
+        print("key presses time dif: $times");
+        print("average_lat: ${times.average}");
         value = true;
       }
     });
@@ -279,11 +277,6 @@ class _GamePageState extends State<GamePage> {
       "8 column": [boardHeight],
       "9 column": [boardHeight],
       "10 column": [boardHeight],
-      "11 column": [boardHeight],
-      "12 column": [boardHeight],
-      "13 column": [boardHeight],
-      "14 column": [boardHeight],
-      "15 column": [boardHeight],
     };
     alivePoints.forEach((point) {
       switch (point.x) {
@@ -317,21 +310,6 @@ class _GamePageState extends State<GamePage> {
         case 9:
           pointsY["10 column"]!.add(point.y);
           break;
-        case 10:
-          pointsY["11 column"]!.add(point.y);
-          break;
-        case 11:
-          pointsY["12 column"]!.add(point.y);
-          break;
-        case 12:
-          pointsY["13 column"]!.add(point.y);
-          break;
-        case 13:
-          pointsY["14 column"]!.add(point.y);
-          break;
-        case 14:
-          pointsY["15 column"]!.add(point.y);
-          break;
         default:
       }
     });
@@ -339,46 +317,16 @@ class _GamePageState extends State<GamePage> {
     for (var i = 1; i <= boardWidth; i++) {
       mainPoints.add(boardHeight - pointsY["$i column"]!.reduce(min));
     }
-    Map<String, int> Cds = {
-      "1-2": 0,
-      "2-3": 0,
-      "3-4": 0,
-      "4-5": 0,
-      "5-6": 0,
-      "6-7": 0,
-      "7-8": 0,
-      "8-9": 0,
-      "9-10": 0,
-      "10-11": 0,
-      "11-12": 0,
-      "12-13": 0,
-      "13-14": 0,
-      "14-15": 0,
-      "15-15": 0,
-    };
+    Map<String, int> Cds = {};
     for (int i = 1; i <= boardWidth; i++) {
-      Cds["${i}-${i + 1 > boardWidth ? boardWidth : i + 1}"] =
+      Cds["columns ${i}-${i + 1 > boardWidth ? boardWidth : i + 1}"] =
           mainPoints[i == boardWidth ? boardWidth - 1 : i] - mainPoints[i - 1];
     }
-    print(Cds);
+    print("Columns dif: $Cds");
     meanHeight = mainPoints.average;
     maxHeight = mainPoints.reduce(max);
-    print("Points max: ${maxHeight} Points average:  ${meanHeight}");
-    // print('high Point 1 : ${pointsY["1 column"]!.reduce(min)}');
-    // print('high Point 2 : ${pointsY["2 column"]!.reduce(min)}');
-    // print('high Point 3 : ${pointsY["3 column"]!.reduce(min)}');
-    // print('high Point 4 : ${pointsY["4 column"]!.reduce(min)}');
-    // print('high Point 5 : ${pointsY["5 column"]!.reduce(min)}');
-    // print('high Point 6 : ${pointsY["6 column"]!.reduce(min)}');
-    // print('high Point 7 : ${pointsY["7 column"]!.reduce(min)}');
-    // print('high Point 8 : ${pointsY["8 column"]!.reduce(min)}');
-    // print('high Point 9 : ${pointsY["9 column"]!.reduce(min)}');
-    // print('high Point 10 : ${pointsY["10 column"]!.reduce(min)}');
-    // print('high Point 11 : ${pointsY["11 column"]!.reduce(min)}');
-    // print('high Point 12 : ${pointsY["12 column"]!.reduce(min)}');
-    // print('high Point 13 : ${pointsY["13 column"]!.reduce(min)}');
-    // print('high Point 14 : ${pointsY["14 column"]!.reduce(min)}');
-    // print('high Point 15 : ${pointsY["15 column"]!.reduce(min)}');
+    print("max height: ${maxHeight} mean height: ${meanHeight}");
+
     // jaggedness
     List<int> temp = [];
     for (var i = 0; i < boardWidth; i++) {
@@ -419,26 +367,6 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
-  // void vibrate() {
-  //   switch (currentBlock!.movementNum) {
-  //     case 3:
-  //       HapticFeedback.lightImpact();
-  //       print("vibrate");
-  //       break;
-  //     case 4:
-  //       HapticFeedback.lightImpact();
-  //       print("vibrate");
-  //       break;
-  //     default:
-  //   }
-  //   // if (currentBlock!.movementNum < 5) {
-  //   //   HapticFeedback.lightImpact();
-  //   //   print("vibrate");
-  //   //   HapticFeedback.lightImpact();
-  //   //   print("vibrate");
-  //   // }
-  // }
-
   void onTimeTick(Timer time) {
     if (currentBlock == null || gameOver) return;
 
@@ -453,6 +381,7 @@ class _GamePageState extends State<GamePage> {
       // calculate data
       highestPoint();
       getPitsAndWells();
+      drawPattern();
       // Draw new block
       setState(() {
         currentBlock!.movementNum = 0;
@@ -577,186 +506,186 @@ class _GamePageState extends State<GamePage> {
         ]),
       ),
       body: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue, Colors.cyan],
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "Score: $score",
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Center(
-          child: Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              border: Border.all(color: borderColor ?? Colors.black, width: 3),
-            ),
-            child: gameOver
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      getGameOverText(score),
-                      const SizedBox(
-                        height: 30,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Column(
+                  children: [
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue, Colors.cyan],
+                        ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          gameOver = false;
-                          score = 0;
-                          setState(() {
-                            alivePoints.removeWhere((element) => true);
-                          });
-                          timer.cancel();
-                          startGame();
-                        },
-                        child: const Text(
-                          "Try Again",
-                          style: TextStyle(
-                            fontSize: 16,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Score: $score",
+                          style: const TextStyle(
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      )
-                    ],
-                  )
-                : drawTetrisBlocks(),
-          ),
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 30,
+                    ),
+                    Container(
+                      width: 110,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(10)),
+                        border: Border.all(color: Colors.black),
+                      ),
+                      child: Column(children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(10),
+                              topLeft: Radius.circular(10),
+                            ),
+                            gradient: LinearGradient(
+                              colors: [Colors.blue, Colors.cyan],
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Next",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 5,
+                        ),
+                        Center(
+                          child: SizedBox(
+                            width: 100,
+                            height: 55,
+                            child: gameOver ? Container() : drawNextBlocks(),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  width: 20,
+                ),
+                Center(
+                  child: Container(
+                    width: width,
+                    height: height,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: borderColor ?? Colors.black, width: 3),
+                    ),
+                    child: gameOver
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              getGameOverText(score),
+                              const SizedBox(
+                                height: 30,
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  gameOver = false;
+                                  score = 0;
+                                  setState(() {
+                                    alivePoints.removeWhere((element) => true);
+                                  });
+                                  timer.cancel();
+                                  startGame();
+                                },
+                                child: const Text(
+                                  "Try Again",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              )
+                            ],
+                          )
+                        : drawTetrisBlocks(),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Container(
-              width: 110,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(10)),
-                border: Border.all(color: Colors.black),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    performAction = LastButtonPressed.rotateLeft;
+                  });
+                  d_timer.add(DateTime.now());
+                },
+                child: const Icon(
+                  Icons.rotate_left,
+                ),
               ),
-              child: Column(children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(10),
-                      topLeft: Radius.circular(10),
-                    ),
-                    gradient: LinearGradient(
-                      colors: [Colors.blue, Colors.cyan],
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          "Next",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 5,
-                ),
-                Center(
-                  child: SizedBox(
-                    width: 100,
-                    height: 55,
-                    child: gameOver ? Container() : drawNextBlocks(),
-                  ),
-                ),
-              ]),
             ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            performAction = LastButtonPressed.rotateLeft;
-                          });
-                          drawPattern();
-                          d_timer.add(DateTime.now());
-                        },
-                        child: const Icon(
-                          Icons.rotate_left,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            performAction = LastButtonPressed.rotateRight;
-                          });
-                          d_timer.add(DateTime.now());
-                        },
-                        child: const Icon(
-                          Icons.rotate_right,
-                        ),
-                      ),
-                    ),
-                  ],
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    performAction = LastButtonPressed.rotateRight;
+                  });
+                  d_timer.add(DateTime.now());
+                },
+                child: const Icon(
+                  Icons.rotate_right,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            performAction = LastButtonPressed.left;
-                          });
-                          d_timer.add(DateTime.now());
-                        },
-                        child: const Icon(
-                          Icons.arrow_left,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            performAction = LastButtonPressed.right;
-                          });
-                          d_timer.add(DateTime.now());
-                        },
-                        child: const Icon(
-                          Icons.arrow_right,
-                        ),
-                      ),
-                    ),
-                  ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    performAction = LastButtonPressed.left;
+                  });
+                  d_timer.add(DateTime.now());
+                },
+                child: const Icon(
+                  Icons.arrow_left,
                 ),
-              ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    performAction = LastButtonPressed.right;
+                  });
+                  d_timer.add(DateTime.now());
+                },
+                child: const Icon(
+                  Icons.arrow_right,
+                ),
+              ),
             ),
           ],
         )
