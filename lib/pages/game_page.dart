@@ -20,7 +20,7 @@ enum LastButtonPressed { left, right, rotateLeft, rotateRight, none }
 enum MoveDir { left, right, down }
 
 // Global Variables
-const int boardWidth = 15;
+const int boardWidth = 10;
 const int boardHeight = 20;
 const double pointSize = 20; // size in px
 const double width = boardWidth * pointSize;
@@ -154,24 +154,71 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  // TODO
   void drawPattern() {
-    List<List<int>> pattern = [];
     List<Point> allPoints = [];
     alivePoints.forEach((point) {
       allPoints.add(Point(point.x, point.y));
     });
+    // pattern row div
+    int pattern_r_div = 0;
+    List<List<int>> pattern = [];
     for (var y = boardHeight - 1; y >= 0; y--) {
       List<int> row = [];
       for (var x = 0; x < boardWidth; x++) {
         if (allPoints.contains(Point(x, y))) {
           row.add(1);
         } else {
-          row.add(-1);
+          row.add(0);
         }
       }
       pattern.add(row);
     }
-    print(pattern.reversed);
+    List temp = [];
+    for (var y = 0; y < pattern.length; y++) {
+      for (int i = 0; i < pattern[y].length; i++) {
+        temp.add(pattern[y][i] +
+            pattern[y + 1 == pattern.length ? pattern.length - 1 : y + 1][i]);
+      }
+    }
+    // pattern column div
+    int pattern_c_div = 0;
+    List<List<int>> pattern2 = [];
+    for (var x = 0; x < boardWidth; x++) {
+      List<int> column = [];
+      for (var y = boardHeight - 1; y >= 0; y--) {
+        if (allPoints.contains(Point(x, y))) {
+          column.add(1);
+        } else {
+          column.add(0);
+        }
+      }
+      pattern2.add(column);
+    }
+    List temp2 = [];
+    for (var y = 0; y < pattern2.length; y++) {
+      for (int i = 0; i < pattern2[y].length; i++) {
+        temp2.add(pattern2[y][i] +
+            pattern2[y + 1 == pattern2.length ? pattern2.length - 1 : y + 1]
+                [i]);
+      }
+    }
+    // weighted_cell
+    Map<String, double> weighted_cell = {};
+    for (var x = 0; x < pattern2.length; x++) {
+      // TODO: boardHeight or columnHeight
+      weighted_cell["column ${x + 1}"] =
+          (pattern2[x].where((item) => item == 1).length / boardHeight) * 100;
+    }
+    // print(temp);
+    print(weighted_cell);
+    print(temp2);
+    print(temp2.where((item) => item == 1).length);
+    // print(temp.where((item) => item == 1).length);
+    pattern_r_div = temp.where((item) => item == 1).length;
+    pattern_c_div = temp2.where((item) => item == 1).length;
+    print(pattern2);
+    print(pattern2.where((item) => item == 1).length);
   }
 
   void getPitsAndWells() {
@@ -332,6 +379,18 @@ class _GamePageState extends State<GamePage> {
     // print('high Point 13 : ${pointsY["13 column"]!.reduce(min)}');
     // print('high Point 14 : ${pointsY["14 column"]!.reduce(min)}');
     // print('high Point 15 : ${pointsY["15 column"]!.reduce(min)}');
+    // jaggedness
+    List<int> temp = [];
+    for (var i = 0; i < boardWidth; i++) {
+      temp.add(boardHeight - pointsY["${i + 1} column"]!.reduce(min));
+    }
+    int jaggedness = 0;
+    for (var i = 0; i < temp.length; i++) {
+      jaggedness +=
+          (temp[i + 1 == temp.length ? temp.length - 1 : i + 1] - temp[i])
+              .abs();
+    }
+    print("jaggedness: ${jaggedness}");
   }
 
   void changeBorderColor() {
@@ -705,39 +764,3 @@ class _GamePageState extends State<GamePage> {
     );
   }
 }
-// [[1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, -1]]
-
-// [[-1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [1, 1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1], 
-// [-1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1], 
-// [-1,

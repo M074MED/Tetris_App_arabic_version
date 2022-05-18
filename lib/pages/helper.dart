@@ -49,7 +49,7 @@ Widget getGameOverText(int score) {
       "Game Over\nEnd Score: $score",
       style: const TextStyle(
           color: Colors.blue,
-          fontSize: 35,
+          fontSize: 33,
           fontWeight: FontWeight.bold,
           shadows: [
             Shadow(
