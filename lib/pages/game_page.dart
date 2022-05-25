@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui';
 import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
@@ -15,6 +16,10 @@ import '../blocks/SQblock.dart';
 import '../blocks/Sblock.dart';
 import '../blocks/Tblock.dart';
 import '../blocks/Zblock.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
+import 'package:gradient_widgets/gradient_widgets.dart';
+import 'package:step_progress_indicator/step_progress_indicator.dart';
 
 enum LastButtonPressed { left, right, rotateLeft, rotateRight, none }
 enum MoveDir { left, right, down }
@@ -25,7 +30,7 @@ const int boardHeight = 20;
 const double pointSize = 25; // size in px
 const double width = boardWidth * pointSize;
 const double height = boardHeight * pointSize;
-const int gameSpeed = 400; // speed in milliseconds
+
 late Timer timer;
 
 class GamePage extends StatefulWidget {
@@ -42,11 +47,23 @@ class _GamePageState extends State<GamePage> {
   List<AlivePoint> alivePoints = [];
   List<Point> alivePointsXY = [];
   int score = 0;
+  int level = 0;
   bool gameOver = false;
   Color? borderColor;
   double meanHeight = 0;
   int maxHeight = 0;
+  double pattern_div = 0;
+  double weighted_cells_avg = 0;
+  int pits_num = 0;
+  int wells_num = 0;
+  int cd_9 = 0;
+  int jaggedness = 0;
+  double avg_lat = 0;
+  double indValue = 0;
+  List<Color> indColor = [Colors.green, Colors.green];
+  int total_movements = 0;
   List<DateTime> d_timer = [];
+  int gameSpeed = 1000; // speed in milliseconds
 
   @override
   void initState() {
@@ -60,7 +77,7 @@ class _GamePageState extends State<GamePage> {
       nextBlock = getRandomBlock();
     });
     timer = Timer.periodic(
-      const Duration(milliseconds: gameSpeed),
+      Duration(milliseconds: gameSpeed),
       onTimeTick,
     );
   }
@@ -143,7 +160,26 @@ class _GamePageState extends State<GamePage> {
         }
       });
       score++;
+      level = (score / 7).round();
+      levelUp();
     });
+  }
+
+  void levelUp() {
+    // TODO: maxHeight or score ......... (score % 7 == 0)
+    if (score % 1 == 0 && level < 20) {
+      setState(() {
+        gameSpeed -= 900; // 1000/boardHeight = 50
+      });
+      timer.cancel();
+      startGame();
+      print("*" * 20);
+      print("Level: $level");
+      print("*" * 20);
+      print("*" * 20);
+      print("Game Speed: $gameSpeed");
+      print("*" * 20);
+    }
   }
 
   void removeFullRows() {
@@ -158,6 +194,38 @@ class _GamePageState extends State<GamePage> {
         removeRow(currentRow);
       }
     }
+  }
+
+  void changeIndData() {
+    d_timer.sort();
+    List<int> times = [];
+    for (var i = 0; i < d_timer.length; i++) {
+      times.add(d_timer[i + 1 == d_timer.length ? d_timer.length - 1 : i + 1]
+          .difference(d_timer[i])
+          .inSeconds);
+    }
+    print("key presses time dif: $times");
+    avg_lat = times.average;
+    print("average_lat: ${times.average}");
+    // indValue = pattern_div * 28.51 +
+    //     meanHeight * 12.36 +
+    //     (weighted_cells_avg / 100) * 11.9 +
+    //     pits_num * 10.92 -
+    //     cd_9 * 10.57 +
+    //     wells_num * 6.38 +
+    //     jaggedness * 5.33 +
+    //     avg_lat * 2.372 +
+    //     total_movements * 10.65;
+    if (indValue < 15) {
+      HapticFeedback.lightImpact();
+    } else if (indValue > 30 && indValue < 50) {
+      indColor.insert(0, Colors.yellow);
+    } else if (indValue > 50 && indValue < 70) {
+      indColor.insert(0, Colors.orange);
+    } else if (indValue > 70) {
+      indColor.insert(0, Colors.red);
+    }
+    print("indValue: $indValue");
   }
 
   // TODO
@@ -210,15 +278,16 @@ class _GamePageState extends State<GamePage> {
     pattern_c_div = temp2.where((item) => item == 1).length;
 
     // weighted_cell
-    Map<String, String> weighted_cell = {};
+    Map<String, double> weighted_cell = {};
     for (var x = 0; x < pattern2.length; x++) {
       // TODO: boardHeight or columnHeight
       weighted_cell["column ${x + 1}"] =
-          ((pattern2[x].where((item) => item == 1).length / boardHeight) * 100)
-              .toStringAsFixed(2);
+          (pattern2[x].where((item) => item == 1).length / boardHeight) * 100;
     }
 
+    weighted_cells_avg = (weighted_cell.values.toList()).average;
     print("weighted_cell (%): ${weighted_cell}");
+    pattern_div = (pattern_r_div + pattern_c_div) / 2;
     print("pattern_r_div: ${pattern_r_div}");
     print("pattern_c_div: ${pattern_c_div}");
   }
@@ -242,6 +311,8 @@ class _GamePageState extends State<GamePage> {
         }
       }
     }
+    pits_num = pits.length;
+    wells_num = wells.length;
     print("Pits num: ${pits.length}, Wells num: ${wells.length}");
   }
 
@@ -249,16 +320,6 @@ class _GamePageState extends State<GamePage> {
     bool value = false;
     alivePoints.forEach((point) {
       if (point.y <= 0) {
-        d_timer.sort();
-        List<int> times = [];
-        for (var i = 0; i < d_timer.length; i++) {
-          times.add(
-              d_timer[i + 1 == d_timer.length ? d_timer.length - 1 : i + 1]
-                  .difference(d_timer[i])
-                  .inSeconds);
-        }
-        print("key presses time dif: $times");
-        print("average_lat: ${times.average}");
         value = true;
       }
     });
@@ -317,11 +378,14 @@ class _GamePageState extends State<GamePage> {
     for (var i = 1; i <= boardWidth; i++) {
       mainPoints.add(boardHeight - pointsY["$i column"]!.reduce(min));
     }
+    // TODO: abs or not
     Map<String, int> Cds = {};
     for (int i = 1; i <= boardWidth; i++) {
       Cds["columns ${i}-${i + 1 > boardWidth ? boardWidth : i + 1}"] =
-          mainPoints[i == boardWidth ? boardWidth - 1 : i] - mainPoints[i - 1];
+          (mainPoints[i == boardWidth ? boardWidth - 1 : i] - mainPoints[i - 1])
+              .abs();
     }
+    cd_9 = Cds["columns 9-10"]!;
     print("Columns dif: $Cds");
     meanHeight = mainPoints.average;
     maxHeight = mainPoints.reduce(max);
@@ -332,7 +396,7 @@ class _GamePageState extends State<GamePage> {
     for (var i = 0; i < boardWidth; i++) {
       temp.add(boardHeight - pointsY["${i + 1} column"]!.reduce(min));
     }
-    int jaggedness = 0;
+    jaggedness = 0;
     for (var i = 0; i < temp.length; i++) {
       jaggedness +=
           (temp[i + 1 == temp.length ? temp.length - 1 : i + 1] - temp[i])
@@ -382,6 +446,9 @@ class _GamePageState extends State<GamePage> {
       highestPoint();
       getPitsAndWells();
       drawPattern();
+      total_movements += currentBlock!.movementNum;
+      indValue += 15;
+      changeIndData();
       // Draw new block
       setState(() {
         currentBlock!.movementNum = 0;
@@ -513,6 +580,44 @@ class _GamePageState extends State<GamePage> {
               children: [
                 Column(
                   children: [
+                    SizedBox(
+                      width: 100,
+                      height: 200,
+                      child: Center(
+                        // child: RotatedBox(
+                        //   quarterTurns: -1,
+                        child: StepProgressIndicator(
+                          direction: Axis.vertical,
+                          totalSteps: 100,
+                          currentStep: (100 - indValue).round(),
+                          size: 30,
+                          padding: 0,
+                          // selectedColor: Colors.yellow,
+                          // unselectedColor: Colors.cyan,
+                          roundedEdges: const Radius.circular(10),
+                          selectedGradientColor: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Colors.transparent, Colors.transparent],
+                          ),
+                          unselectedGradientColor: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: indColor,
+                          ),
+                        ),
+                        // ),
+                        // child: FAProgressBar(
+                        //   size: 80,
+                        //   direction: Axis.vertical,
+                        //   verticalDirection: VerticalDirection.up,
+                        //   currentValue: indValue,
+                        //   displayText: '%',
+                        //   progressColor: Colors.green,
+                        // ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
@@ -523,6 +628,26 @@ class _GamePageState extends State<GamePage> {
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           "Score: $score",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue, Colors.cyan],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Level: $level",
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
