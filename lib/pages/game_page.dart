@@ -21,6 +21,12 @@ import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.da
 import 'package:gradient_widgets/gradient_widgets.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
 
+import 'package:csv/csv.dart';
+import 'dart:io';
+// import 'package:ext_storage/ext_storage.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:external_path/external_path.dart';
+
 enum LastButtonPressed { left, right, rotateLeft, rotateRight, none }
 enum MoveDir { left, right, down }
 
@@ -160,7 +166,7 @@ class _GamePageState extends State<GamePage> {
         }
       });
       score++;
-      level = (score / 7).round();
+      level = (score / 7).floor();
       levelUp();
     });
   }
@@ -321,6 +327,7 @@ class _GamePageState extends State<GamePage> {
     alivePoints.forEach((point) {
       if (point.y <= 0) {
         value = true;
+        // writeCsvFile();
       }
     });
     return value;
@@ -431,6 +438,67 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  // void writeCsvFile() async {
+  //   Map<Permission, PermissionStatus> statuses = await [
+  //     Permission.storage,
+  //   ].request();
+
+  //   List<dynamic> associateList = [
+  //     {
+  //       "pits": pits_num,
+  //       "wells": wells_num,
+  //       "meanHeight": meanHeight,
+  //       "pattern_div": pattern_div,
+  //       "weighted_cells_avg": weighted_cells_avg,
+  //       "cd_9": cd_9,
+  //       "jaggedness": jaggedness,
+  //       "avg_lat": avg_lat,
+  //       "total_movements": total_movements,
+  //     },
+  //     // {"number": 2, "lat": "14.97534313396318", "lon": "101.22998536005622"},
+  //     // {"number": 3, "lat": "14.97534313396318", "lon": "101.22998536005622"},
+  //     // {"number": 4, "lat": "14.97534313396318", "lon": "101.22998536005622"}
+  //   ];
+
+  //   List<List<dynamic>> rows = [];
+
+  //   List<dynamic> row = [];
+  //   row.add("pits");
+  //   row.add("wells");
+  //   row.add("meanHeight");
+  //   row.add("pattern_div");
+  //   row.add("weighted_cells_avg");
+  //   row.add("cd_9");
+  //   row.add("jaggedness");
+  //   row.add("avg_lat");
+  //   row.add("total_movements");
+  //   rows.add(row);
+  //   for (int i = 0; i < associateList.length; i++) {
+  //     List<dynamic> row = [];
+  //     row.add(associateList[i]["pits"]);
+  //     row.add(associateList[i]["wells"]);
+  //     row.add(associateList[i]["meanHeight"]);
+  //     row.add(associateList[i]["pattern_div"]);
+  //     row.add(associateList[i]["weighted_cells_avg"]);
+  //     row.add(associateList[i]["cd_9"]);
+  //     row.add(associateList[i]["jaggedness"]);
+  //     row.add(associateList[i]["avg_lat"]);
+  //     row.add(associateList[i]["total_movements"]);
+  //     rows.add(row);
+  //   }
+
+  //   String csv = const ListToCsvConverter().convert(rows);
+
+  //   String dir = await ExternalPath.getExternalStoragePublicDirectory(
+  //       ExternalPath.DIRECTORY_DOWNLOADS);
+  //   print("dir $dir");
+  //   String file = "$dir";
+
+  //   File f = File(file + "/filename.csv");
+
+  //   f.writeAsString(csv);
+  // }
+
   void onTimeTick(Timer time) {
     if (currentBlock == null || gameOver) return;
 
@@ -448,6 +516,9 @@ class _GamePageState extends State<GamePage> {
       drawPattern();
       total_movements += currentBlock!.movementNum;
       indValue += 15;
+      if (indValue > 100) {
+        indValue = 100;
+      }
       changeIndData();
       // Draw new block
       setState(() {
@@ -598,7 +669,7 @@ class _GamePageState extends State<GamePage> {
                           selectedGradientColor: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Colors.transparent, Colors.transparent],
+                            colors: [Colors.grey, Colors.transparent],
                           ),
                           unselectedGradientColor: LinearGradient(
                             begin: Alignment.topLeft,

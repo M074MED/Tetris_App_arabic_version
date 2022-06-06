@@ -37,6 +37,11 @@ dependencies:
   flutter_animation_progress_bar: ^2.2.1
   gradient_widgets: ^0.6.0
   step_progress_indicator: ^1.0.2
+  permission_handler: ^9.2.0
+  # ext_storage: ^1.0.3
+  csv: ^5.0.1
+  external_path: ^1.0.1
+  backendless_sdk: ^7.2.3
   
 
 dev_dependencies:
