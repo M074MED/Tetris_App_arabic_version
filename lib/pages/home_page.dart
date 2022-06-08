@@ -1,6 +1,10 @@
+import 'package:backendless_sdk/backendless_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:tetris_app/init.dart';
 import 'package:tetris_app/pages/helper.dart';
 import '../routes/routes.dart';
+
+final usernameInput = TextEditingController();
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({
@@ -12,7 +16,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final usernameInput = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    InitApp.initializeApp(context);
+  }
+
+  // final usernameInput = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,12 +49,12 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 width: 300,
                 child: TextField(
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Enter Username',
                     border: OutlineInputBorder(),
                   ),
                   controller: usernameInput,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 20,
                   ),
                 ),

@@ -1,8 +1,9 @@
 import 'package:backendless_sdk/backendless_sdk.dart';
-// import 'package:backendless_todo_starter/routes/routes.dart';
 // import 'package:backendless_todo_starter/services/todo_service.dart';
 // import 'package:backendless_todo_starter/services/user_service.dart';
 import 'package:flutter/cupertino.dart';
+
+import 'routes/routes.dart';
 // import 'package:provider/provider.dart';
 
 class InitApp {
@@ -11,18 +12,19 @@ class InitApp {
   static final String appID = '1B87CFC9-DC13-690E-FFA2-F557A5EF0E00';
 
   static void initializeApp(BuildContext context) async {
+    String result = "OK";
+    Backendless.setUrl('https://api.backendless.com');
     await Backendless.initApp(
-        applicationId: appID,
-        iosApiKey: apiKeyiOS,
-        androidApiKey: apiKeyAndroid);
-    // String result = await context.read<UserService>().checkIfUserLoggedIn();
-    // if (result == 'OK') {
-    //   context
-    //       .read<TodoService>()
-    //       .getTodos(context.read<UserService>().currentUser!.email);
-    //   Navigator.popAndPushNamed(context, RouteManager.todoPage);
-    // } else {
-    //   Navigator.popAndPushNamed(context, RouteManager.loginPage);
-    // }
+            applicationId: appID,
+            iosApiKey: apiKeyiOS,
+            androidApiKey: apiKeyAndroid)
+        .onError((error, stackTrace) {
+      result = error.toString();
+    });
+    if (result == 'OK') {
+      print(result);
+    } else {
+      print(result);
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
+import 'package:backendless_sdk/backendless_sdk.dart' as bkl;
 import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:tetris_app/blocks/Iblock.dart';
 import 'package:tetris_app/blocks/Lblock.dart';
 import 'package:tetris_app/blocks/alivePoints.dart';
 import 'package:tetris_app/blocks/block.dart';
+import 'package:tetris_app/models/sessions.dart';
 import 'package:tetris_app/pages/helper.dart';
 
 import '../blocks/Jblock.dart';
@@ -26,6 +28,8 @@ import 'dart:io';
 // import 'package:ext_storage/ext_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:external_path/external_path.dart';
+
+import 'home_page.dart';
 
 enum LastButtonPressed { left, right, rotateLeft, rotateRight, none }
 enum MoveDir { left, right, down }
@@ -228,7 +232,7 @@ class _GamePageState extends State<GamePage> {
       indColor.insert(0, Colors.yellow);
     } else if (indValue > 50 && indValue < 70) {
       indColor.insert(0, Colors.orange);
-    } else if (indValue > 70) {
+    } else if (indValue > 70 && indValue < 100) {
       indColor.insert(0, Colors.red);
     }
     print("indValue: $indValue");
@@ -319,7 +323,7 @@ class _GamePageState extends State<GamePage> {
     }
     pits_num = pits.length;
     wells_num = wells.length;
-    print("Pits num: ${pits.length}, Wells num: ${wells.length}");
+    print("Pits num: $pits_num, Wells num: $wells_num");
   }
 
   bool playerLost() {
@@ -438,6 +442,28 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  void sendSessionData() async {
+    await bkl.Backendless.data
+        .of("Sessions")
+        .save(Sessions(
+          pits: pits_num,
+          wells: wells_num,
+          avg_lat: avg_lat,
+          cd_9: cd_9,
+          mean_height: meanHeight,
+          pattern_div: pattern_div,
+          total_movements: total_movements,
+          weighted_cells: weighted_cells_avg,
+          jaggedness: jaggedness,
+          username: usernameInput.text,
+        ).toJson())
+        .catchError((error, stackTrace) {
+      print(error.toString());
+      showSnackBar(context, error.toString());
+    });
+    showSnackBar(context, "Session created!");
+  }
+
   // void writeCsvFile() async {
   //   Map<Permission, PermissionStatus> statuses = await [
   //     Permission.storage,
@@ -504,6 +530,7 @@ class _GamePageState extends State<GamePage> {
 
     if (playerLost()) {
       gameOver = true;
+      sendSessionData();
     }
     // Check if the current block is at the bottom or above an old block
     if (currentBlock!.isAtBottom() || isAboveOldBlock()) {
@@ -526,6 +553,7 @@ class _GamePageState extends State<GamePage> {
         currentBlock = nextBlock;
         nextBlock = getRandomBlock();
       });
+      // sendSessionData();
       Future.delayed(const Duration(milliseconds: 500), () {
         setState(() {
           borderColor = Colors.black;
