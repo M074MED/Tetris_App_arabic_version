@@ -37,7 +37,7 @@ enum MoveDir { left, right, down }
 // Global Variables
 const int boardWidth = 10;
 const int boardHeight = 20;
-const double pointSize = 25; // size in px
+const double pointSize = 20; // size in px
 const double width = boardWidth * pointSize;
 const double height = boardHeight * pointSize;
 
@@ -57,6 +57,9 @@ class _GamePageState extends State<GamePage> {
   List<AlivePoint> alivePoints = [];
   List<Point> alivePointsXY = [];
   int score = 0;
+  int tetrises = 0;
+  int lines = 0;
+  int game = 1;
   int level = 0;
   bool gameOver = false;
   Color? borderColor;
@@ -74,18 +77,27 @@ class _GamePageState extends State<GamePage> {
   int total_movements = 0;
   List<DateTime> d_timer = [];
   int gameSpeed = 1000; // speed in milliseconds
+  int tempGameSpeed = 1000; // speed in milliseconds
+  String startButton = "Start";
 
-  @override
-  void initState() {
-    super.initState();
-    startGame();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   startGame();
+  // }
 
   void startGame() {
     setState(() {
       currentBlock = getRandomBlock();
       nextBlock = getRandomBlock();
     });
+    timer = Timer.periodic(
+      Duration(milliseconds: gameSpeed),
+      onTimeTick,
+    );
+  }
+
+  void cont() {
     timer = Timer.periodic(
       Duration(milliseconds: gameSpeed),
       onTimeTick,
@@ -169,26 +181,79 @@ class _GamePageState extends State<GamePage> {
           point.y += 1;
         }
       });
-      score++;
-      level = (score / 7).floor();
+      lines++;
+      level = (lines / 7).floor();
       levelUp();
     });
   }
 
   void levelUp() {
-    // TODO: maxHeight or score ......... (score % 7 == 0)
-    if (score % 1 == 0 && level < 20) {
+    // TODO: maxHeight or lines ......... (lines % 7 == 0)
+    if (lines % 7 == 0 && level < 20) {
       setState(() {
-        gameSpeed -= 900; // 1000/boardHeight = 50
+        gameSpeed -= 50; // 1000/boardHeight = 50
+        tempGameSpeed -= 50; // 1000/boardHeight = 50
       });
       timer.cancel();
-      startGame();
+      cont();
       print("*" * 20);
       print("Level: $level");
       print("*" * 20);
       print("*" * 20);
       print("Game Speed: $gameSpeed");
       print("*" * 20);
+    } else if (lines % 7 == 0 && level > 20) {
+      setState(() {
+        gameSpeed = (gameSpeed * 0.5).round();
+        tempGameSpeed = (tempGameSpeed * 0.5).round();
+      });
+      timer.cancel();
+      cont();
+      print("*" * 20);
+      print("Level: $level");
+      print("*" * 20);
+      print("*" * 20);
+      print("Game Speed: $gameSpeed");
+      print("*" * 20);
+    }
+  }
+
+  void countTetrisesAndScore() {
+    int fullLines = 0;
+    for (var currentRow = 0; currentRow < boardHeight; currentRow++) {
+      int counter = 0;
+      alivePoints.forEach((point) {
+        if (point.y == currentRow) {
+          counter++;
+        }
+      });
+      if (counter >= boardWidth) {
+        fullLines++;
+      }
+      switch (fullLines) {
+        case 1:
+          setState(() {
+            score += 40*(level+1) ;
+          });
+          break;
+        case 2:
+          setState(() {
+            score += 100*(level+1) ;
+          });
+          break;
+        case 3:
+          setState(() {
+            score += 300*(level+1) ;
+          });
+          break;
+        case 4:
+          setState(() {
+          tetrises++;
+          score += 1200*(level+1) ;
+        });
+          break;
+        default:
+      }
     }
   }
 
@@ -207,16 +272,20 @@ class _GamePageState extends State<GamePage> {
   }
 
   void changeIndData() {
-    d_timer.sort();
-    List<int> times = [];
-    for (var i = 0; i < d_timer.length; i++) {
-      times.add(d_timer[i + 1 == d_timer.length ? d_timer.length - 1 : i + 1]
-          .difference(d_timer[i])
-          .inSeconds);
+    try {
+      d_timer.sort();
+      List<int> times = [];
+      for (var i = 0; i < d_timer.length; i++) {
+        times.add(d_timer[i + 1 == d_timer.length ? d_timer.length - 1 : i + 1]
+            .difference(d_timer[i])
+            .inSeconds);
+      }
+      print("key presses time dif: $times");
+      avg_lat = times.average;
+    } catch (e) {
+      avg_lat = 0;
     }
-    print("key presses time dif: $times");
-    avg_lat = times.average;
-    print("average_lat: ${times.average}");
+    print("average_lat: ${avg_lat}");
     // indValue = pattern_div * 28.51 +
     //     meanHeight * 12.36 +
     //     (weighted_cells_avg / 100) * 11.9 +
@@ -556,7 +625,7 @@ class _GamePageState extends State<GamePage> {
       // sendSessionData();
       Future.delayed(const Duration(milliseconds: 500), () {
         setState(() {
-          borderColor = Colors.black;
+          borderColor = Colors.white;
         });
       });
     } else {
@@ -567,6 +636,7 @@ class _GamePageState extends State<GamePage> {
     }
 
     // Remove full rows
+    countTetrisesAndScore();
     removeFullRows();
   }
 
@@ -658,7 +728,11 @@ class _GamePageState extends State<GamePage> {
             Icons.arrow_back_ios_new_rounded,
           ),
           onPressed: () async {
-            timer.cancel();
+            try {
+              timer.cancel();
+            } catch (e) {
+              print("$e");
+            }
             Navigator.pop(context);
           },
         ),
@@ -671,249 +745,471 @@ class _GamePageState extends State<GamePage> {
           Text("TETRIS"),
         ]),
       ),
-      body: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              children: [
-                Column(
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      height: 200,
-                      child: Center(
-                        // child: RotatedBox(
-                        //   quarterTurns: -1,
-                        child: StepProgressIndicator(
-                          direction: Axis.vertical,
-                          totalSteps: 100,
-                          currentStep: (100 - indValue).round(),
-                          size: 30,
-                          padding: 0,
-                          // selectedColor: Colors.yellow,
-                          // unselectedColor: Colors.cyan,
-                          roundedEdges: const Radius.circular(10),
-                          selectedGradientColor: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Colors.grey, Colors.transparent],
+      body: Container(
+        color: Colors.black,
+        child:
+            Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          Container(
+            // decoration: const BoxDecoration(
+            //   gradient: LinearGradient(
+            //     colors: [Colors.blue, Colors.cyan],
+            //   ),
+            // ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Score: $score",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Column(
+                    children: [
+                      // SizedBox(
+                      //   width: 100,
+                      //   height: 200,
+                      //   child: Center(
+                      //     // child: RotatedBox(
+                      //     //   quarterTurns: -1,
+                      //     child: StepProgressIndicator(
+                      //       direction: Axis.vertical,
+                      //       totalSteps: 100,
+                      //       currentStep: (100 - indValue).round(),
+                      //       size: 30,
+                      //       padding: 0,
+                      //       // selectedColor: Colors.yellow,
+                      //       // unselectedColor: Colors.cyan,
+                      //       roundedEdges: const Radius.circular(10),
+                      //       selectedGradientColor: const LinearGradient(
+                      //         begin: Alignment.topLeft,
+                      //         end: Alignment.bottomRight,
+                      //         colors: [Colors.grey, Colors.transparent],
+                      //       ),
+                      //       unselectedGradientColor: LinearGradient(
+                      //         begin: Alignment.topLeft,
+                      //         end: Alignment.bottomRight,
+                      //         colors: indColor,
+                      //       ),
+                      //     ),
+                      //     // ),
+                      //     // child: FAProgressBar(
+                      //     //   size: 80,
+                      //     //   direction: Axis.vertical,
+                      //     //   verticalDirection: VerticalDirection.up,
+                      //     //   currentValue: indValue,
+                      //     //   displayText: '%',
+                      //     //   progressColor: Colors.green,
+                      //     // ),
+                      //   ),
+                      // ),
+                      const SizedBox(height: 20),
+                      Container(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Tetrises\n$tetrises",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          unselectedGradientColor: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: indColor,
-                          ),
-                        ),
-                        // ),
-                        // child: FAProgressBar(
-                        //   size: 80,
-                        //   direction: Axis.vertical,
-                        //   verticalDirection: VerticalDirection.up,
-                        //   currentValue: indValue,
-                        //   displayText: '%',
-                        //   progressColor: Colors.green,
-                        // ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue, Colors.cyan],
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          "Score: $score",
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                      const SizedBox(
+                        height: 40,
+                      ),
+                      Container(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Lines\n$lines",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue, Colors.cyan],
-                        ),
+                      const SizedBox(
+                        height: 40,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          "Level: $level",
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                      Container(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Level\n$level",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    Container(
-                      width: 110,
-                      height: 100,
+                      const SizedBox(
+                        height: 40,
+                      ),
+                      Container(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Game\n$game",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      // const SizedBox(
+                      //   height: 30,
+                      // ),
+                      // Container(
+                      //   width: 100,
+                      //   height: 100,
+                      //   decoration: BoxDecoration(
+                      //     borderRadius:
+                      //         const BorderRadius.all(Radius.circular(10)),
+                      //     border: Border.all(color: Colors.transparent),
+                      //   ),
+                      //   child: Column(children: [
+                      //     Container(
+                      //       decoration: const BoxDecoration(
+                      //         borderRadius: BorderRadius.only(
+                      //           topRight: Radius.circular(10),
+                      //           topLeft: Radius.circular(10),
+                      //         ),
+                      //         gradient: LinearGradient(
+                      //           colors: [Colors.blue, Colors.cyan],
+                      //         ),
+                      //       ),
+                      //       child: Row(
+                      //         mainAxisAlignment: MainAxisAlignment.center,
+                      //         children: const [
+                      //           Padding(
+                      //             padding: EdgeInsets.all(8.0),
+                      //             child: Text(
+                      //               "Next",
+                      //               style: TextStyle(
+                      //                color: Colors.white,
+                      //                 fontSize: 16,
+                      //                 fontWeight: FontWeight.bold,
+                      //               ),
+                      //             ),
+                      //           ),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //     const SizedBox(
+                      //       height: 5,
+                      //     ),
+                      //     Center(
+                      //       child: SizedBox(
+                      //         width: 100,
+                      //         height: 55,
+                      //         child: gameOver ? Container() : drawNextBlocks(),
+                      //       ),
+                      //     ),
+                      //   ]),
+                      // ),
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Center(
+                    child: Container(
+                      width: width,
+                      height: height,
                       decoration: BoxDecoration(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(10)),
-                        border: Border.all(color: Colors.black),
+                        border: Border.all(
+                            color: borderColor ?? Colors.white, width: 3),
                       ),
-                      child: Column(children: [
-                        Container(
-                          decoration: const BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(10),
-                              topLeft: Radius.circular(10),
-                            ),
-                            gradient: LinearGradient(
-                              colors: [Colors.blue, Colors.cyan],
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text(
-                                  "Next",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                      child: gameOver
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                getGameOverText(score),
+                                const SizedBox(
+                                  height: 30,
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    gameOver = false;
+                                    score = 0;
+                                    lines = 0;
+                                    tetrises = 0;
+                                    level = 0;
+                                    setState(() {
+                                      game++;
+                                      alivePoints
+                                          .removeWhere((element) => true);
+                                    });
+                                    timer.cancel();
+                                    startGame();
+                                  },
+                                  child: const Text(
+                                    "Try Again",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
+                              ],
+                            )
+                          : drawTetrisBlocks(),
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Column(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(10)),
+                          border: Border.all(color: Colors.transparent),
+                        ),
+                        child: Column(children: [
+                          Container(
+                            // decoration: const BoxDecoration(
+                            //   borderRadius: BorderRadius.only(
+                            //     topRight: Radius.circular(10),
+                            //     topLeft: Radius.circular(10),
+                            //   ),
+                            //   gradient: LinearGradient(
+                            //     colors: [Colors.blue, Colors.cyan],
+                            //   ),
+                            // ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    "Next",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Center(
+                            child: SizedBox(
+                              width: 100,
+                              height: 55,
+                              child: gameOver ? Container() : drawNextBlocks(),
+                            ),
+                          ),
+                        ]),
+                      ),
+                      const SizedBox(
+                        height: 80,
+                      ),
+                      SizedBox(
+                        width: 100,
+                        height: 200,
+                        child: Center(
+                          // child: RotatedBox(
+                          //   quarterTurns: -1,
+                          child: StepProgressIndicator(
+                            direction: Axis.vertical,
+                            totalSteps: 100,
+                            currentStep: (100 - indValue).round(),
+                            size: 30,
+                            padding: 0,
+                            // selectedColor: Colors.yellow,
+                            // unselectedColor: Colors.cyan,
+                            roundedEdges: const Radius.circular(10),
+                            selectedGradientColor: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Colors.grey, Colors.transparent],
+                            ),
+                            unselectedGradientColor: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: indColor,
+                            ),
+                          ),
+                          // ),
+                          // child: FAProgressBar(
+                          //   size: 80,
+                          //   direction: Axis.vertical,
+                          //   verticalDirection: VerticalDirection.up,
+                          //   currentValue: indValue,
+                          //   displayText: '%',
+                          //   progressColor: Colors.green,
+                          // ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(5.0),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              performAction = LastButtonPressed.left;
+                            });
+                            d_timer.add(DateTime.now());
+                          },
+                          child: const Icon(
+                            Icons.arrow_left,
                           ),
                         ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        Center(
-                          child: SizedBox(
-                            width: 100,
-                            height: 55,
-                            child: gameOver ? Container() : drawNextBlocks(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(5.0),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              performAction = LastButtonPressed.right;
+                            });
+                            d_timer.add(DateTime.now());
+                          },
+                          child: const Icon(
+                            Icons.arrow_right,
                           ),
                         ),
-                      ]),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(0.0),
+                    child: GestureDetector(
+                      onTapDown: (details) {
+                        setState(() {
+                          tempGameSpeed = gameSpeed;
+                          timer.cancel();
+                          gameSpeed = 50;
+                          cont();
+                        });
+                      },
+                      onTapCancel: () {
+                        setState(() {
+                          print(
+                              "GameSpeed: $gameSpeed // tempGameSpeed: $tempGameSpeed");
+                          timer.cancel();
+                          gameSpeed = tempGameSpeed;
+                          cont();
+                        });
+                      },
+                      child: ElevatedButton(
+                        onPressed: () {
+                          d_timer.add(DateTime.now());
+                        },
+                        child: const Icon(
+                          Icons.arrow_drop_down,
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                Center(
-                  child: Container(
-                    width: width,
-                    height: height,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: borderColor ?? Colors.black, width: 3),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (startButton == "Stop") {
+                        startButton = "Start";
+                        timer.cancel();
+                      } else {
+                        startButton = "Stop";
+                        if (currentBlock == null) {
+                          startGame();
+                        } else {
+                          cont();
+                        }
+                      }
+                    });
+                  },
+                  child: Text(
+                    startButton,
+                    style: const TextStyle(
+                      fontSize: 16,
                     ),
-                    child: gameOver
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              getGameOverText(score),
-                              const SizedBox(
-                                height: 30,
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  gameOver = false;
-                                  score = 0;
-                                  setState(() {
-                                    alivePoints.removeWhere((element) => true);
-                                  });
-                                  timer.cancel();
-                                  startGame();
-                                },
-                                child: const Text(
-                                  "Try Again",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                            ],
-                          )
-                        : drawTetrisBlocks(),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    shape: const CircleBorder(),
+                    primary: Colors.red,
+                    minimumSize: const Size(40, 40),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    performAction = LastButtonPressed.rotateLeft;
-                  });
-                  d_timer.add(DateTime.now());
-                },
-                child: const Icon(
-                  Icons.rotate_left,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      performAction = LastButtonPressed.rotateLeft;
+                    });
+                    d_timer.add(DateTime.now());
+                  },
+                  child: const Icon(
+                    Icons.rotate_left,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    performAction = LastButtonPressed.rotateRight;
-                  });
-                  d_timer.add(DateTime.now());
-                },
-                child: const Icon(
-                  Icons.rotate_right,
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      performAction = LastButtonPressed.rotateRight;
+                    });
+                    d_timer.add(DateTime.now());
+                  },
+                  child: const Icon(
+                    Icons.rotate_right,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    performAction = LastButtonPressed.left;
-                  });
-                  d_timer.add(DateTime.now());
-                },
-                child: const Icon(
-                  Icons.arrow_left,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    performAction = LastButtonPressed.right;
-                  });
-                  d_timer.add(DateTime.now());
-                },
-                child: const Icon(
-                  Icons.arrow_right,
-                ),
-              ),
-            ),
-          ],
-        )
-      ]),
+            ],
+          )
+        ]),
+      ),
     );
   }
 }

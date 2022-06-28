@@ -36,53 +36,61 @@ class _MyHomePageState extends State<MyHomePage> {
           Text("TETRIS"),
         ]),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Image(image: AssetImage("assets/images/img.png")),
-              ),
-              const SizedBox(height: 50),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Enter Username',
-                    border: OutlineInputBorder(),
-                  ),
-                  controller: usernameInput,
-                  style: const TextStyle(
-                    fontSize: 20,
-                  ),
+      body: Container(
+        color: Colors.black,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Image(image: AssetImage("assets/images/img.png")),
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (usernameInput.text == "") {
-                    showSnackBar(context, "Please Enter a Username!");
-                  } else {
-                    Navigator.of(context).pushNamed(RouteManager.gamePage);
-                  }
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const <Widget>[
-                    Text(
-                      'Play',
-                      style: TextStyle(fontSize: 40),
+                const SizedBox(height: 50),
+                SizedBox(
+                  width: 300,
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      iconColor: Colors.white,
+                      labelText: 'Enter Username',
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white)),
+                          labelStyle: TextStyle(color: Colors.white),
                     ),
-                    Icon(
-                      Icons.play_arrow,
-                      size: 40,
-                    )
-                  ],
+                    controller: usernameInput,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    if (usernameInput.text == "") {
+                      showSnackBar(context, "Please Enter a Username!");
+                    } else {
+                      Navigator.of(context).pushNamed(RouteManager.gamePage);
+                    }
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const <Widget>[
+                      Text(
+                        'Play',
+                        style: TextStyle(fontSize: 40),
+                      ),
+                      Icon(
+                        Icons.play_arrow,
+                        size: 40,
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
