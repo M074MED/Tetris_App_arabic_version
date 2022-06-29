@@ -12,11 +12,12 @@ class Block {
   int translationNum = 0;
   int onDropDownY1 = 0;
   int onDropDownY2 = 0;
-  double dropDowns = 0;
+  double proportion_of_user_drops = 0;
   int dropDownCounter = 0;
   int initial_latency = 0;
-  int atBottomLat = 0;
-  int firstDropDownLat = 0;
+  int response_latency = 0;
+  int drop_latency = 0;
+  int matches = 0;
   List<String> rotatePattern = [];
 
   void move(MoveDir dir) {

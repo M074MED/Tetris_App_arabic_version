@@ -65,13 +65,27 @@ class _GamePageState extends State<GamePage> {
   Color? borderColor;
   double meanHeight = 0;
   int maxHeight = 0;
+  int delta_max_height = 0;
   int minHeight = 0;
   int maximum_differences = 0;
+  int landing_height = 1;
   double pattern_div = 0;
+  int column_transitions = 0;
+  int row_transitions = 0;
   double weighted_cells_avg = 0;
   int pits_num = 0;
+  int delta_pits = 0;
+  double pit_depth = 0;
+  double lumped_pits = 0;
   int wells_num = 0;
+  int max_well = 0;
+  int deep_wells = 0;
+  double cumulative_wells = 0;
   int cd_9 = 0;
+  int cd_1 = 0;
+  int cd_7 = 0;
+  int cd_8 = 0;
+  int cd_2 = 0;
   int jaggedness = 0;
   double avg_lat = 0;
   double indValue = 0;
@@ -84,6 +98,7 @@ class _GamePageState extends State<GamePage> {
   int minimumTranslationsDif = 0;
   int minimumRotationsDif = 0;
   List<DateTime> d_timer = [];
+  List<int> mainPoints = []; // mainPoints => columns heights
   DateTime drawBlockDate = DateTime.utc(0);
   int gameSpeed = 1000; // speed in milliseconds
   int tempGameSpeed = 1000; // speed in milliseconds
@@ -199,7 +214,6 @@ class _GamePageState extends State<GamePage> {
   }
 
   void levelUp() {
-    // TODO: maxHeight or lines ......... (lines % 7 == 0)
     if (lines % 7 == 0 && level < 20) {
       setState(() {
         gameSpeed -= 50; // 1000/boardHeight = 50
@@ -297,15 +311,41 @@ class _GamePageState extends State<GamePage> {
       avg_lat = 0;
     }
     print("average_lat: ${avg_lat}");
-    // indValue = pattern_div * 28.51 +
-    //     meanHeight * 12.36 +
-    //     (weighted_cells_avg / 100) * 11.9 +
-    //     pits_num * 10.92 -
-    //     cd_9 * 10.57 +
-    //     wells_num * 6.38 +
-    //     jaggedness * 5.33 +
-    //     avg_lat * 2.372 +
-    //     total_movements * 10.65;
+    indValue = 5 *
+        ((pattern_div * 0.1251132) +
+            (meanHeight * 0.05239681) +
+            (maxHeight * 0.051240783) +
+            (weighted_cells_avg * 0.050453956) +
+            (minHeight * 0.050302274) +
+            (row_transitions * 0.050216027) +
+            (pits_num * 0.046309109) +  // + (pit_rows_mean * 0.046244674) TODO
+            (landing_height * 0.045510476) +
+            (column_transitions * 0.045442039) +
+            (pit_depth * 0.04540702) +
+            (lumped_pits * 0.045332779) -
+            (cd_9 * 0.044794087) +
+            (wells_num * 0.027048065) +
+            (deep_wells * 0.026704079) +
+            (max_well * 0.026626037) +
+            (cumulative_wells * 0.026196003) -
+            (currentBlock!.proportion_of_user_drops * 0.024190116) +
+            (jaggedness * 0.022607458) +
+            (maximum_differences * 0.019303867) +
+            (cd_1 * 0.017928321) +
+            (currentBlock!.response_latency * 0.015281085) +
+            (currentBlock!.rotateNum * 0.012734505) +
+            (minimumRotationsDif * 0.012548804) +
+            (currentBlock!.drop_latency * 0.012471762) +
+            (minimumTranslationsDif * 0.010394636) +
+            (avg_lat * 0.010057253) -
+            (currentBlock!.matches * 0.00962802) +
+            (currentBlock!.translationNum * 0.009460329) +
+            (delta_max_height * 0.00673225) -
+            (currentBlock!.initial_latency * 0.006052482) +
+            (delta_pits * 0.004095821) +
+            (cd_7 * 0.000487464) +
+            (cd_8 * 0.000467453) +
+            (cd_2 * 0.00022092));
     if (indValue < 15) {
       HapticFeedback.lightImpact();
     } else if (indValue > 30 && indValue < 50) {
@@ -318,10 +358,8 @@ class _GamePageState extends State<GamePage> {
     print("indValue: $indValue");
   }
 
-  // TODO
   void drawPattern() {
     // pattern row div
-    int pattern_r_div = 0;
     List<List<int>> pattern = [];
     for (var y = boardHeight - 1; y >= 0; y--) {
       List<int> row = [];
@@ -341,10 +379,9 @@ class _GamePageState extends State<GamePage> {
             pattern[y + 1 == pattern.length ? pattern.length - 1 : y + 1][i]);
       }
     }
-    pattern_r_div = temp.where((item) => item == 1).length;
+    row_transitions = temp.where((item) => item == 1).length;
 
     // pattern column div
-    int pattern_c_div = 0;
     List<List<int>> pattern2 = [];
     for (var x = 0; x < boardWidth; x++) {
       List<int> column = [];
@@ -365,42 +402,146 @@ class _GamePageState extends State<GamePage> {
                 [i]);
       }
     }
-    pattern_c_div = temp2.where((item) => item == 1).length;
+    column_transitions = temp2.where((item) => item == 1).length;
 
     // weighted_cell
     Map<String, double> weighted_cell = {};
     for (var x = 0; x < pattern2.length; x++) {
-      // TODO: boardHeight or columnHeight
-      weighted_cell["column ${x + 1}"] =
-          (pattern2[x].where((item) => item == 1).length / boardHeight) * 100;
+      weighted_cell["column ${x + 1}"] = mainPoints[x] == 0
+          ? 0
+          : (pattern2[x].where((item) => item == 1).length /
+              mainPoints[x]); // mainPoints => columns heights
     }
 
     weighted_cells_avg = (weighted_cell.values.toList()).average;
     print("weighted_cell (%): ${weighted_cell}");
-    pattern_div = (pattern_r_div + pattern_c_div) / 2;
-    print("pattern_r_div: ${pattern_r_div}");
-    print("pattern_c_div: ${pattern_c_div}");
+    pattern_div = (row_transitions + column_transitions) / 2;
+    print("row_transitions: ${row_transitions}");
+    print("column_transitions: ${column_transitions}");
+  }
+
+  bool isColumnEmpty(List<Point> list, int x, int y) {
+    for (var i = 1; i < y; i++) {
+      if (list.contains(Point(x, y - i))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void getPitsAndWells() {
     List<Point> pits = [];
     List<Point> wells = [];
-    for (var currentRow = 0; currentRow < maxHeight; currentRow++) {
-      int y = (boardHeight - 1) - currentRow;
-      for (var x = 0; x < boardWidth; x++) {
+    for (var x = 0; x < boardWidth; x++) {
+      for (var y = boardHeight - 1; y >= 0; y--) {
         Point currentPoint = Point(x, y);
         if ((!alivePointsXY.contains(currentPoint)) &&
-            alivePointsXY.contains(Point(x, y - 1))) {
-          pits.add(currentPoint);
-        } else if ((!alivePointsXY.contains(currentPoint)) &&
-            (!alivePointsXY.contains(Point(x, y - 1))) &&
-            (alivePointsXY.contains(Point(x - 1, y)) ||
-                alivePointsXY.contains(Point(x + 1, y)) ||
-                alivePointsXY.contains(Point(x, y + 1)))) {
+            (isColumnEmpty(alivePointsXY, x, y)) &&
+            (alivePointsXY.contains(Point(x + 1, y)) ||
+                alivePointsXY.contains(Point(x - 1, y))) &&
+            ((y == boardHeight - 1) ||
+                alivePointsXY.contains(Point(x, y + 1)) ||
+                wells.contains(Point(x, y + 1)))) {
           wells.add(currentPoint);
         }
       }
     }
+
+    List<double> pit_depth_list = [];
+    for (var x = 0; x < boardWidth; x++) {
+      int pitCounter = 0;
+      int pointCounter = 0;
+      for (var y = 0; y < boardHeight; y++) {
+        Point currentPoint = Point(x, y);
+        if ((!alivePointsXY.contains(currentPoint)) &&
+            (alivePointsXY.contains(Point(x, y - 1)) ||
+                pits.contains(Point(x, y - 1))) &&
+            (alivePointsXY.contains(Point(x + 1, y)) ||
+                pits.contains(Point(x + 1, y)) ||
+                (x == boardWidth - 1) ||
+                (!wells.contains(Point(x + 1, y)))) &&
+            (alivePointsXY.contains(Point(x - 1, y)) ||
+                pits.contains(Point(x - 1, y)) ||
+                (x == 0) ||
+                (!wells.contains(Point(x - 1, y))))) {
+          pits.add(currentPoint);
+          pitCounter++;
+        }
+        if (alivePointsXY.contains(currentPoint)) {
+          pointCounter++;
+        }
+      }
+      if (pointCounter == 0) {
+        pit_depth_list.add(0);
+      } else {
+        pit_depth_list.add((pitCounter / pointCounter) * 1.25);
+      }
+    }
+
+    // TODO: Not work
+    int pitsGroupCounter = 0;
+    for (var i = 0; i < pits.length; i++) {
+      num x = pits[i].x;
+      num y = pits[i].y;
+      if (pits.contains(Point(x + 1, y))) {
+        pitsGroupCounter++;
+      }
+      if (pits.contains(Point(x - 1, y))) {
+        pitsGroupCounter++;
+      }
+      if (pits.contains(Point(x, y + 1))) {
+        pitsGroupCounter++;
+      }
+      if (pits.contains(Point(x, y - 1))) {
+        pitsGroupCounter++;
+      }
+    }
+    lumped_pits = 0;
+    for (var i = 1; i <= pitsGroupCounter; i++) {
+      lumped_pits += (1 / i);
+    }
+
+    pit_depth = pit_depth_list.average;
+    print("PD" * 22);
+    print("$pit_depth || $pit_depth_list || $pitsGroupCounter || $lumped_pits");
+    print("PD" * 22);
+
+    List<String> wellXTemp = [];
+    wells.forEach((well) {
+      wellXTemp.add("${well.x}");
+    });
+    List<String> pitsXTemp = [];
+    pits.forEach((pit) {
+      pitsXTemp.add("${pit.x}");
+    });
+    print("T" * 22);
+    print(pitsXTemp);
+    print("T" * 22);
+    print("E" * 22);
+    print(wellXTemp);
+    print("E" * 22);
+    Map<dynamic, int> wellsMap = {};
+    wellXTemp.forEach((x) =>
+        wellsMap[x] = !wellsMap.containsKey(x) ? (1) : (wellsMap[x]! + 1));
+    print("W" * 50);
+    print((wellsMap.values).toList());
+    deep_wells = (wellsMap.values).toList().where((item) => item >= 3).length;
+    max_well = (wellsMap.values).toList().reduce(max);
+    List<num> cumulative_wells_temp = [];
+    (wellsMap.values).toList().forEach((element) {
+      cumulative_wells_temp.add((pow(element, 2) + element) / 2);
+    });
+    cumulative_wells = cumulative_wells_temp.average;
+    print(
+        "$max_well || $deep_wells || $cumulative_wells || $cumulative_wells_temp");
+    print("W" * 50);
+    // Map<String, int> tempWells = {};
+    // wells.forEach((well) {
+    //   tempWells["${well.x}"] = 0;
+    // });
+    // wells.forEach((well) {
+    //   tempWells["${well.x}"] += 1;
+    // });
     pits_num = pits.length;
     wells_num = wells.length;
     print("Pits num: $pits_num, Wells num: $wells_num");
@@ -465,11 +606,10 @@ class _GamePageState extends State<GamePage> {
         default:
       }
     });
-    List<int> mainPoints = [];
+    mainPoints = [];
     for (var i = 1; i <= boardWidth; i++) {
       mainPoints.add(boardHeight - pointsY["$i column"]!.reduce(min));
     }
-    // TODO: abs or not
     Map<String, int> Cds = {};
     for (int i = 1; i <= boardWidth; i++) {
       Cds["columns ${i}-${i + 1 > boardWidth ? boardWidth : i + 1}"] =
@@ -477,13 +617,23 @@ class _GamePageState extends State<GamePage> {
               .abs();
     }
     cd_9 = Cds["columns 9-10"]!;
+    cd_1 = Cds["columns 1-2"]!;
+    cd_7 = Cds["columns 7-8"]!;
+    cd_8 = Cds["columns 8-9"]!;
+    cd_2 = Cds["columns 2-3"]!;
     print("Columns dif: $Cds");
     meanHeight = mainPoints.average;
     maxHeight = mainPoints.reduce(max);
     minHeight = mainPoints.reduce(min);
     maximum_differences = maxHeight - minHeight;
+    // Calculate landing height and matches
+    alivePoints.forEach((oldPoint) {
+      if (oldPoint.checkIfPointsCollide(currentBlock!.points)) {
+        landing_height = 20 - oldPoint.y;
+      }
+    });
     print(
-        "max height: ${maxHeight} min height: ${minHeight} mean height: ${meanHeight} maximum_differences: ${maximum_differences}");
+        "max height: ${maxHeight} min height: ${minHeight} mean height: ${meanHeight} maximum_differences: ${maximum_differences} landing height: ${landing_height} matches: ${currentBlock!.matches}");
 
     // jaggedness
     List<int> temp = [];
@@ -497,9 +647,6 @@ class _GamePageState extends State<GamePage> {
               .abs();
     }
     print("jaggedness: ${jaggedness}");
-    
-    // Calculate landing height
-    
   }
 
   void changeBorderColor() {
@@ -538,6 +685,27 @@ class _GamePageState extends State<GamePage> {
           level: level,
           lines: lines,
           game: game,
+          rotations: currentBlock!.rotateNum,
+          proportion_of_user_drops: currentBlock!.proportion_of_user_drops,
+          minimum_rotation_difference: minimumRotationsDif,
+          minimum_translation_difference: minimumTranslationsDif,
+          maximum_differences: maximum_differences,
+          initial_latency: currentBlock!.initial_latency,
+          drop_latency: currentBlock!.drop_latency,
+          response_latency: currentBlock!.response_latency,
+          max_well: max_well,
+          deep_wells: deep_wells,
+          cumulative_wells: cumulative_wells,
+          column_transitions: column_transitions,
+          row_transitions: row_transitions,
+          landing_height: landing_height,
+          matches: currentBlock!.matches,
+          delta_max_height: delta_max_height,
+          delta_pits: delta_pits,
+          pit_depth: pit_depth,
+          lumped_pits: lumped_pits,
+          max_height: maxHeight,
+          min_height: minHeight,
           wells: wells_num,
           avg_lat: avg_lat,
           cd_9: cd_9,
@@ -624,22 +792,22 @@ class _GamePageState extends State<GamePage> {
         currentBlock!.movementNum - currentBlock!.rotateNum;
     if (dropDownHolding) {
       currentBlock!.onDropDownY2 = currentBlock!.rotationCenter.y;
-      currentBlock!.dropDowns =
+      currentBlock!.proportion_of_user_drops =
           ((currentBlock!.onDropDownY1 - currentBlock!.onDropDownY2) /
                   boardHeight)
               .abs();
       print("*" * 20);
       print(
-          "${currentBlock!.onDropDownY1} || ${currentBlock!.onDropDownY2} || ${currentBlock!.rotateNum} || ${currentBlock!.translationNum} || ${currentBlock!.dropDowns}");
+          "${currentBlock!.onDropDownY1} || ${currentBlock!.onDropDownY2} || ${currentBlock!.rotateNum} || ${currentBlock!.translationNum} || ${currentBlock!.proportion_of_user_drops}");
       print("*" * 20);
     } else {
-      currentBlock!.dropDowns =
+      currentBlock!.proportion_of_user_drops =
           ((currentBlock!.onDropDownY1 - currentBlock!.onDropDownY2) /
                   boardHeight)
               .abs();
       print("*" * 20);
       print(
-          "${currentBlock!.onDropDownY1} || ${currentBlock!.onDropDownY2} || ${currentBlock!.rotateNum} || ${currentBlock!.translationNum} || ${currentBlock!.dropDowns}");
+          "${currentBlock!.onDropDownY1} || ${currentBlock!.onDropDownY2} || ${currentBlock!.rotateNum} || ${currentBlock!.translationNum} || ${currentBlock!.proportion_of_user_drops}");
       print("*" * 20);
     }
   }
@@ -689,44 +857,77 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  // Calculate matches
+  void calcMatches() {
+    currentBlock!.points.forEach((point) {
+      if (alivePointsXY.contains(Point(point.x - 1, point.y))) {
+        currentBlock!.matches++;
+      }
+      if (alivePointsXY.contains(Point(point.x + 1, point.y))) {
+        currentBlock!.matches++;
+      }
+      if (alivePointsXY.contains(Point(point.x, point.y + 1))) {
+        currentBlock!.matches++;
+      }
+    });
+  }
+
   void onTimeTick(Timer time) {
     if (currentBlock == null || gameOver) return;
 
     if (playerLost()) {
       gameOver = true;
-      try {
-        sendSessionData();
-      } catch (e) {
-        print("$e");
-      }
+      // try {
+      //   sendSessionData();
+      // } catch (e) {
+      //   print("$e");
+      // }
     }
     // Check if the current block is at the bottom or above an old block
     if (currentBlock!.isAtBottom() || isAboveOldBlock()) {
       changeBorderColor();
+      // Calculate matches
+      calcMatches();
       // Save the block
       saveOldBlock();
+      // Remove full rows
+      int maxHeightTemp = maxHeight;
+      int pitsNumTemp = pits_num;
+      countTetrisesAndScore();
+      removeFullRows();
       // calculate data
       highestPoint();
+      delta_max_height = (maxHeightTemp - maxHeight).abs();
+      print("Q" * 30);
+      print("$delta_max_height");
+      print("Q" * 30);
       getPitsAndWells();
+      delta_pits = (pitsNumTemp - pits_num).abs();
+      print("DP" * 30);
+      print("$delta_pits");
+      print("DP" * 30);
       drawPattern();
       calcTransitions();
       calcMinTransDif();
       calcMinRotationsDif();
       if (currentBlock!.movementNum == 0 &&
           currentBlock!.rotateNum == 0 &&
-          currentBlock!.dropDowns == 0) {
-        currentBlock!.atBottomLat =
+          currentBlock!.proportion_of_user_drops == 0) {
+        currentBlock!.response_latency =
             DateTime.now().difference(drawBlockDate).inSeconds;
       }
       print("|" * 20);
       print(
-          "${currentBlock!.atBottomLat} | ${currentBlock!.firstDropDownLat} | ${currentBlock!.initial_latency}");
+          "${currentBlock!.response_latency} | ${currentBlock!.drop_latency} | ${currentBlock!.initial_latency}");
       print("|" * 20);
-      indValue += 15;
+
+      // indValue += 15;
+
+      changeIndData();
+
       if (indValue > 100) {
         indValue = 100;
       }
-      changeIndData();
       // Draw new block
       setState(() {
         // currentBlock!.movementNum = 0;
@@ -741,16 +942,18 @@ class _GamePageState extends State<GamePage> {
           borderColor = Colors.white;
         });
       });
+      // send data
+      try {
+        sendSessionData();
+      } catch (e) {
+        print("$e");
+      }
     } else {
       setState(() {
         currentBlock!.move(MoveDir.down);
       });
       checkForUserInput();
     }
-
-    // Remove full rows
-    countTetrisesAndScore();
-    removeFullRows();
   }
 
   Widget? drawTetrisBlocks() {
@@ -1273,7 +1476,7 @@ class _GamePageState extends State<GamePage> {
                           calcInitialLat();
                           currentBlock!.dropDownCounter++;
                           if (currentBlock!.dropDownCounter == 1) {
-                            currentBlock!.firstDropDownLat = DateTime.now()
+                            currentBlock!.drop_latency = DateTime.now()
                                 .difference(drawBlockDate)
                                 .inSeconds;
                           }
