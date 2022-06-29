@@ -5,6 +5,7 @@ import 'package:tetris_app/pages/helper.dart';
 import '../routes/routes.dart';
 
 final usernameInput = TextEditingController();
+bool showIndicator = true;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({
@@ -20,6 +21,18 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     InitApp.initializeApp(context);
+  }
+
+  void toggleSwitch(bool value) {
+    if (showIndicator == false) {
+      setState(() {
+        showIndicator = true;
+      });
+    } else {
+      setState(() {
+        showIndicator = false;
+      });
+    }
   }
 
   // final usernameInput = TextEditingController();
@@ -48,6 +61,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Image(image: AssetImage("assets/images/img.png")),
                 ),
                 const SizedBox(height: 50),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Text(
+                    'Show Indicator',
+                    style: TextStyle(fontSize: 20, color: Colors.white),
+                  ),
+                  const SizedBox(
+                    width: 100,
+                  ),
+                  Transform.scale(
+                      scale: 2,
+                      child: Switch(
+                        onChanged: toggleSwitch,
+                        value: showIndicator,
+                        inactiveTrackColor: Colors.white,
+                      )),
+                ]),
+                const SizedBox(
+                  height: 15,
+                ),
                 SizedBox(
                   width: 300,
                   child: TextField(
@@ -57,7 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       border: OutlineInputBorder(),
                       enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.white)),
-                          labelStyle: TextStyle(color: Colors.white),
+                      labelStyle: TextStyle(color: Colors.white),
                     ),
                     controller: usernameInput,
                     style: const TextStyle(

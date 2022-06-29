@@ -8,6 +8,16 @@ class Block {
   late Point rotationCenter;
   late Color color;
   int movementNum = 0;
+  int rotateNum = 0;
+  int translationNum = 0;
+  int onDropDownY1 = 0;
+  int onDropDownY2 = 0;
+  double dropDowns = 0;
+  int dropDownCounter = 0;
+  int initial_latency = 0;
+  int atBottomLat = 0;
+  int firstDropDownLat = 0;
+  List<String> rotatePattern = [];
 
   void move(MoveDir dir) {
     switch (dir) {
@@ -51,11 +61,15 @@ class Block {
       point.x = rotationCenter.x - point.y + rotationCenter.y;
       point.y = rotationCenter.y + x - rotationCenter.x;
     });
+    movementNum++;
+    rotateNum++;
+    rotatePattern.add("R");
     if (!canMoveToSide(0)) {
       rotateLeft();
       movementNum--;
+      rotateNum--;
+      rotatePattern.removeLast();
     }
-    movementNum++;
   }
 
   void rotateLeft() {
@@ -64,11 +78,15 @@ class Block {
       point.x = rotationCenter.x + point.y - rotationCenter.y;
       point.y = rotationCenter.y - x + rotationCenter.x;
     });
+    movementNum++;
+    rotateNum++;
+    rotatePattern.add("L");
     if (!canMoveToSide(0)) {
       rotateRight();
       movementNum--;
+      rotateNum--;
+      rotatePattern.removeLast();
     }
-    movementNum++;
   }
 
   bool isAtBottom() {

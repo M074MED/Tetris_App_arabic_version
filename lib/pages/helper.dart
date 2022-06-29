@@ -46,7 +46,8 @@ Widget getTetrisPoint(Color color) {
 Widget getGameOverText(int score) {
   return Center(
     child: Text(
-      "Game Over\nEnd Score: $score",
+      "Game Over\nEnd Score:\n$score",
+      textAlign: TextAlign.center,
       style: const TextStyle(
           color: Colors.blue,
           fontSize: 33,

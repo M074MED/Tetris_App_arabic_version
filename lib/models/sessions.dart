@@ -1,5 +1,10 @@
 class Sessions {
   int pits;
+  int score;
+  int tetrises;
+  int level;
+  int lines;
+  int game;
   double avg_lat;
   int cd_9;
   double mean_height;
@@ -15,6 +20,11 @@ class Sessions {
 
   Sessions({
     required this.pits,
+    required this.tetrises,
+    required this.level,
+    required this.lines,
+    required this.score,
+    required this.game,
     required this.avg_lat,
     required this.cd_9,
     required this.mean_height,
@@ -31,6 +41,11 @@ class Sessions {
 
   Map<String, Object?> toJson() => {
         'pits': pits,
+        'tetrises': tetrises,
+        'score': score,
+        'game': game,
+        'level': level,
+        'lines': lines,
         'avg_lat': avg_lat,
         'cd_9': cd_9,
         'mean_height': mean_height,
@@ -47,6 +62,11 @@ class Sessions {
 
   static Sessions fromJson(Map<dynamic, dynamic>? json) => Sessions(
         pits: json!['pits'] as int,
+        score: json['score'] as int,
+        game: json['game'] as int,
+        lines: json['lines'] as int,
+        level: json['level'] as int,
+        tetrises: json['tetrises'] as int,
         avg_lat: json['avg_lat'] as double,
         cd_9: json['cd_9'] as int,
         mean_height: json['mean_height'] as double,

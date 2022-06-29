@@ -37,9 +37,9 @@ enum MoveDir { left, right, down }
 // Global Variables
 const int boardWidth = 10;
 const int boardHeight = 20;
-const double pointSize = 20; // size in px
-const double width = boardWidth * pointSize;
-const double height = boardHeight * pointSize;
+double pointSize = 20; // size in px
+double width = boardWidth * pointSize;
+double height = boardHeight * pointSize;
 
 late Timer timer;
 
@@ -65,6 +65,8 @@ class _GamePageState extends State<GamePage> {
   Color? borderColor;
   double meanHeight = 0;
   int maxHeight = 0;
+  int minHeight = 0;
+  int maximum_differences = 0;
   double pattern_div = 0;
   double weighted_cells_avg = 0;
   int pits_num = 0;
@@ -75,7 +77,14 @@ class _GamePageState extends State<GamePage> {
   double indValue = 0;
   List<Color> indColor = [Colors.green, Colors.green];
   int total_movements = 0;
+  int total_rotations = 0;
+  int total_translations = 0;
+  bool dropDownHolding = false;
+  int rotationCenterX = 0;
+  int minimumTranslationsDif = 0;
+  int minimumRotationsDif = 0;
   List<DateTime> d_timer = [];
+  DateTime drawBlockDate = DateTime.utc(0);
   int gameSpeed = 1000; // speed in milliseconds
   int tempGameSpeed = 1000; // speed in milliseconds
   String startButton = "Start";
@@ -89,8 +98,10 @@ class _GamePageState extends State<GamePage> {
   void startGame() {
     setState(() {
       currentBlock = getRandomBlock();
+      rotationCenterX = currentBlock!.rotationCenter.x;
       nextBlock = getRandomBlock();
     });
+    drawBlockDate = DateTime.now();
     timer = Timer.periodic(
       Duration(milliseconds: gameSpeed),
       onTimeTick,
@@ -233,24 +244,24 @@ class _GamePageState extends State<GamePage> {
       switch (fullLines) {
         case 1:
           setState(() {
-            score += 40*(level+1) ;
+            score += 40 * (level + 1);
           });
           break;
         case 2:
           setState(() {
-            score += 100*(level+1) ;
+            score += 100 * (level + 1);
           });
           break;
         case 3:
           setState(() {
-            score += 300*(level+1) ;
+            score += 300 * (level + 1);
           });
           break;
         case 4:
           setState(() {
-          tetrises++;
-          score += 1200*(level+1) ;
-        });
+            tetrises++;
+            score += 1200 * (level + 1);
+          });
           break;
         default:
       }
@@ -469,7 +480,10 @@ class _GamePageState extends State<GamePage> {
     print("Columns dif: $Cds");
     meanHeight = mainPoints.average;
     maxHeight = mainPoints.reduce(max);
-    print("max height: ${maxHeight} mean height: ${meanHeight}");
+    minHeight = mainPoints.reduce(min);
+    maximum_differences = maxHeight - minHeight;
+    print(
+        "max height: ${maxHeight} min height: ${minHeight} mean height: ${meanHeight} maximum_differences: ${maximum_differences}");
 
     // jaggedness
     List<int> temp = [];
@@ -483,6 +497,9 @@ class _GamePageState extends State<GamePage> {
               .abs();
     }
     print("jaggedness: ${jaggedness}");
+    
+    // Calculate landing height
+    
   }
 
   void changeBorderColor() {
@@ -516,6 +533,11 @@ class _GamePageState extends State<GamePage> {
         .of("Sessions")
         .save(Sessions(
           pits: pits_num,
+          tetrises: tetrises,
+          score: score,
+          level: level,
+          lines: lines,
+          game: game,
           wells: wells_num,
           avg_lat: avg_lat,
           cd_9: cd_9,
@@ -594,12 +616,89 @@ class _GamePageState extends State<GamePage> {
   //   f.writeAsString(csv);
   // }
 
+  void calcTransitions() {
+    total_rotations += currentBlock!.rotateNum;
+    total_movements += currentBlock!.movementNum;
+    total_translations += total_movements - total_rotations;
+    currentBlock!.translationNum =
+        currentBlock!.movementNum - currentBlock!.rotateNum;
+    if (dropDownHolding) {
+      currentBlock!.onDropDownY2 = currentBlock!.rotationCenter.y;
+      currentBlock!.dropDowns =
+          ((currentBlock!.onDropDownY1 - currentBlock!.onDropDownY2) /
+                  boardHeight)
+              .abs();
+      print("*" * 20);
+      print(
+          "${currentBlock!.onDropDownY1} || ${currentBlock!.onDropDownY2} || ${currentBlock!.rotateNum} || ${currentBlock!.translationNum} || ${currentBlock!.dropDowns}");
+      print("*" * 20);
+    } else {
+      currentBlock!.dropDowns =
+          ((currentBlock!.onDropDownY1 - currentBlock!.onDropDownY2) /
+                  boardHeight)
+              .abs();
+      print("*" * 20);
+      print(
+          "${currentBlock!.onDropDownY1} || ${currentBlock!.onDropDownY2} || ${currentBlock!.rotateNum} || ${currentBlock!.translationNum} || ${currentBlock!.dropDowns}");
+      print("*" * 20);
+    }
+  }
+
+  void calcMinTransDif() {
+    int optimalTranslations =
+        (rotationCenterX - currentBlock!.rotationCenter.x).abs();
+    minimumTranslationsDif =
+        (currentBlock!.translationNum - optimalTranslations).abs();
+    print("=" * 20);
+    print(
+        "$minimumTranslationsDif || $rotationCenterX || ${currentBlock!.rotationCenter.x} || $optimalTranslations");
+    print("=" * 20);
+  }
+
+  void calcMinRotationsDif() {
+    if (currentBlock!.name == "IBlock" ||
+        currentBlock!.name == "SBlock" ||
+        currentBlock!.name == "ZBlock") {
+      if (currentBlock!.rotateNum % 2 == 0) {
+        minimumRotationsDif = currentBlock!.rotateNum;
+      } else {
+        minimumRotationsDif = currentBlock!.rotateNum - 1;
+      }
+    } else if (currentBlock!.name != "SQBlock") {
+      int RNum = 0;
+      int LNum = 0;
+      for (var i = 0; i < currentBlock!.rotatePattern.length; i++) {
+        if (currentBlock!.rotatePattern[i] == "R") {
+          RNum++;
+        } else {
+          LNum++;
+        }
+      }
+      minimumRotationsDif =
+          currentBlock!.rotateNum - (((RNum - LNum).abs()) % 4);
+    }
+    print("/" * 20);
+    print("$minimumRotationsDif");
+    print("/" * 20);
+  }
+
+  void calcInitialLat() {
+    if (currentBlock!.movementNum == 0 && currentBlock!.dropDownCounter == 0) {
+      currentBlock!.initial_latency =
+          DateTime.now().difference(drawBlockDate).inSeconds;
+    }
+  }
+
   void onTimeTick(Timer time) {
     if (currentBlock == null || gameOver) return;
 
     if (playerLost()) {
       gameOver = true;
-      sendSessionData();
+      try {
+        sendSessionData();
+      } catch (e) {
+        print("$e");
+      }
     }
     // Check if the current block is at the bottom or above an old block
     if (currentBlock!.isAtBottom() || isAboveOldBlock()) {
@@ -610,7 +709,19 @@ class _GamePageState extends State<GamePage> {
       highestPoint();
       getPitsAndWells();
       drawPattern();
-      total_movements += currentBlock!.movementNum;
+      calcTransitions();
+      calcMinTransDif();
+      calcMinRotationsDif();
+      if (currentBlock!.movementNum == 0 &&
+          currentBlock!.rotateNum == 0 &&
+          currentBlock!.dropDowns == 0) {
+        currentBlock!.atBottomLat =
+            DateTime.now().difference(drawBlockDate).inSeconds;
+      }
+      print("|" * 20);
+      print(
+          "${currentBlock!.atBottomLat} | ${currentBlock!.firstDropDownLat} | ${currentBlock!.initial_latency}");
+      print("|" * 20);
       indValue += 15;
       if (indValue > 100) {
         indValue = 100;
@@ -618,10 +729,12 @@ class _GamePageState extends State<GamePage> {
       changeIndData();
       // Draw new block
       setState(() {
-        currentBlock!.movementNum = 0;
+        // currentBlock!.movementNum = 0;
         currentBlock = nextBlock;
+        rotationCenterX = currentBlock!.rotationCenter.x;
         nextBlock = getRandomBlock();
       });
+      drawBlockDate = DateTime.now();
       // sendSessionData();
       Future.delayed(const Duration(milliseconds: 500), () {
         setState(() {
@@ -721,29 +834,48 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    double userInputFieldPadding = 190.0;
+
+    width = (screenWidth / 6) * 3;
+    height = width * 2.0;
+    // height = screenHeight - userInputFieldPadding;
+    // width = height / 2.0;
+    pointSize = height / boardHeight;
+
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(35),
+        child: AppBar(
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+            ),
+            onPressed: () async {
+              try {
+                timer.cancel();
+              } catch (e) {
+                print("$e");
+              }
+              Navigator.pop(context);
+            },
           ),
-          onPressed: () async {
-            try {
-              timer.cancel();
-            } catch (e) {
-              print("$e");
-            }
-            Navigator.pop(context);
-          },
+          title: Row(children: const [
+            Image(
+              image: AssetImage("assets/images/icon.jpg"),
+              width: 75,
+              height: 35,
+            ),
+            Text(
+              "TETRIS",
+              // style: TextStyle(
+              //   fontSize: 12,
+              // ),
+            ),
+          ]),
         ),
-        title: Row(children: const [
-          Image(
-            image: AssetImage("assets/images/icon.jpg"),
-            width: 100,
-            height: 50,
-          ),
-          Text("TETRIS"),
-        ]),
       ),
       body: Container(
         color: Colors.black,
@@ -756,12 +888,12 @@ class _GamePageState extends State<GamePage> {
             //   ),
             // ),
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(3.0),
               child: Text(
                 "Score: $score",
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: 17,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -815,12 +947,12 @@ class _GamePageState extends State<GamePage> {
                       const SizedBox(height: 20),
                       Container(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(3.0),
                           child: Text(
                             "Tetrises\n$tetrises",
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -832,12 +964,12 @@ class _GamePageState extends State<GamePage> {
                       ),
                       Container(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(3.0),
                           child: Text(
                             "Lines\n$lines",
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -849,12 +981,12 @@ class _GamePageState extends State<GamePage> {
                       ),
                       Container(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(3.0),
                           child: Text(
                             "Level\n$level",
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -866,12 +998,12 @@ class _GamePageState extends State<GamePage> {
                       ),
                       Container(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(3.0),
                           child: Text(
                             "Game\n$game",
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -984,8 +1116,8 @@ class _GamePageState extends State<GamePage> {
                   Column(
                     children: [
                       Container(
-                        width: 100,
-                        height: 100,
+                        width: screenWidth / 5,
+                        // height: 150,
                         decoration: BoxDecoration(
                           borderRadius:
                               const BorderRadius.all(Radius.circular(10)),
@@ -1006,7 +1138,7 @@ class _GamePageState extends State<GamePage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: const [
                                 Padding(
-                                  padding: EdgeInsets.all(8.0),
+                                  padding: EdgeInsets.all(3.0),
                                   child: Text(
                                     "Next",
                                     style: TextStyle(
@@ -1020,57 +1152,59 @@ class _GamePageState extends State<GamePage> {
                             ),
                           ),
                           const SizedBox(
-                            height: 5,
+                            height: 10,
                           ),
                           Center(
                             child: SizedBox(
-                              width: 100,
-                              height: 55,
+                              width: screenWidth / 5,
+                              height: pointSize * 3,
                               child: gameOver ? Container() : drawNextBlocks(),
                             ),
                           ),
                         ]),
                       ),
                       const SizedBox(
-                        height: 80,
+                        height: 60,
                       ),
-                      SizedBox(
-                        width: 100,
-                        height: 200,
-                        child: Center(
-                          // child: RotatedBox(
-                          //   quarterTurns: -1,
-                          child: StepProgressIndicator(
-                            direction: Axis.vertical,
-                            totalSteps: 100,
-                            currentStep: (100 - indValue).round(),
-                            size: 30,
-                            padding: 0,
-                            // selectedColor: Colors.yellow,
-                            // unselectedColor: Colors.cyan,
-                            roundedEdges: const Radius.circular(10),
-                            selectedGradientColor: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Colors.grey, Colors.transparent],
-                            ),
-                            unselectedGradientColor: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: indColor,
-                            ),
-                          ),
-                          // ),
-                          // child: FAProgressBar(
-                          //   size: 80,
-                          //   direction: Axis.vertical,
-                          //   verticalDirection: VerticalDirection.up,
-                          //   currentValue: indValue,
-                          //   displayText: '%',
-                          //   progressColor: Colors.green,
-                          // ),
-                        ),
-                      ),
+                      showIndicator
+                          ? SizedBox(
+                              width: screenWidth / 5,
+                              height: 200,
+                              child: Center(
+                                // child: RotatedBox(
+                                //   quarterTurns: -1,
+                                child: StepProgressIndicator(
+                                  direction: Axis.vertical,
+                                  totalSteps: 100,
+                                  currentStep: (100 - indValue).round(),
+                                  size: 30,
+                                  padding: 0,
+                                  // selectedColor: Colors.yellow,
+                                  // unselectedColor: Colors.cyan,
+                                  roundedEdges: const Radius.circular(10),
+                                  selectedGradientColor: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [Colors.grey, Colors.transparent],
+                                  ),
+                                  unselectedGradientColor: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: indColor,
+                                  ),
+                                ),
+                                // ),
+                                // child: FAProgressBar(
+                                //   size: 80,
+                                //   direction: Axis.vertical,
+                                //   verticalDirection: VerticalDirection.up,
+                                //   currentValue: indValue,
+                                //   displayText: '%',
+                                //   progressColor: Colors.green,
+                                // ),
+                              ),
+                            )
+                          : Container(),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -1086,13 +1220,16 @@ class _GamePageState extends State<GamePage> {
                   Row(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(5.0),
+                        padding: const EdgeInsets.all(3.0),
                         child: ElevatedButton(
                           onPressed: () {
-                            setState(() {
-                              performAction = LastButtonPressed.left;
-                            });
-                            d_timer.add(DateTime.now());
+                            if (startButton == "Stop") {
+                              setState(() {
+                                performAction = LastButtonPressed.left;
+                              });
+                              d_timer.add(DateTime.now());
+                              calcInitialLat();
+                            }
                           },
                           child: const Icon(
                             Icons.arrow_left,
@@ -1100,13 +1237,16 @@ class _GamePageState extends State<GamePage> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(5.0),
+                        padding: const EdgeInsets.all(3.0),
                         child: ElevatedButton(
                           onPressed: () {
-                            setState(() {
-                              performAction = LastButtonPressed.right;
-                            });
-                            d_timer.add(DateTime.now());
+                            if (startButton == "Stop") {
+                              setState(() {
+                                performAction = LastButtonPressed.right;
+                              });
+                              d_timer.add(DateTime.now());
+                              calcInitialLat();
+                            }
                           },
                           child: const Icon(
                             Icons.arrow_right,
@@ -1119,26 +1259,42 @@ class _GamePageState extends State<GamePage> {
                     padding: const EdgeInsets.all(0.0),
                     child: GestureDetector(
                       onTapDown: (details) {
-                        setState(() {
-                          tempGameSpeed = gameSpeed;
-                          timer.cancel();
-                          gameSpeed = 50;
-                          cont();
-                        });
+                        if (startButton == "Stop") {
+                          setState(() {
+                            tempGameSpeed = gameSpeed;
+                            timer.cancel();
+                            gameSpeed = 50;
+                            cont();
+                          });
+                          dropDownHolding = true;
+                          currentBlock!.onDropDownY1 =
+                              currentBlock!.rotationCenter.y;
+                          d_timer.add(DateTime.now());
+                          calcInitialLat();
+                          currentBlock!.dropDownCounter++;
+                          if (currentBlock!.dropDownCounter == 1) {
+                            currentBlock!.firstDropDownLat = DateTime.now()
+                                .difference(drawBlockDate)
+                                .inSeconds;
+                          }
+                        }
                       },
                       onTapCancel: () {
-                        setState(() {
-                          print(
-                              "GameSpeed: $gameSpeed // tempGameSpeed: $tempGameSpeed");
-                          timer.cancel();
-                          gameSpeed = tempGameSpeed;
-                          cont();
-                        });
+                        if (startButton == "Stop") {
+                          setState(() {
+                            print(
+                                "GameSpeed: $gameSpeed // tempGameSpeed: $tempGameSpeed");
+                            timer.cancel();
+                            gameSpeed = tempGameSpeed;
+                            cont();
+                          });
+                          dropDownHolding = false;
+                          currentBlock!.onDropDownY2 =
+                              currentBlock!.rotationCenter.y;
+                        }
                       },
                       child: ElevatedButton(
-                        onPressed: () {
-                          d_timer.add(DateTime.now());
-                        },
+                        onPressed: () {},
                         child: const Icon(
                           Icons.arrow_drop_down,
                         ),
@@ -1148,7 +1304,7 @@ class _GamePageState extends State<GamePage> {
                 ],
               ),
               Padding(
-                padding: const EdgeInsets.all(5.0),
+                padding: const EdgeInsets.all(3.0),
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -1179,13 +1335,16 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(3.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      performAction = LastButtonPressed.rotateLeft;
-                    });
-                    d_timer.add(DateTime.now());
+                    if (startButton == "Stop") {
+                      setState(() {
+                        performAction = LastButtonPressed.rotateLeft;
+                      });
+                      d_timer.add(DateTime.now());
+                      calcInitialLat();
+                    }
                   },
                   child: const Icon(
                     Icons.rotate_left,
@@ -1193,13 +1352,16 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(3.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      performAction = LastButtonPressed.rotateRight;
-                    });
-                    d_timer.add(DateTime.now());
+                    if (startButton == "Stop") {
+                      setState(() {
+                        performAction = LastButtonPressed.rotateRight;
+                      });
+                      d_timer.add(DateTime.now());
+                      calcInitialLat();
+                    }
                   },
                   child: const Icon(
                     Icons.rotate_right,
