@@ -969,7 +969,7 @@ class _GamePageState extends State<GamePage> {
       setState(() {
         currentBlock!.move(MoveDir.down);
       });
-      checkForUserInput();
+      // checkForUserInput();
     }
   }
 
