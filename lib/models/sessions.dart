@@ -19,6 +19,7 @@ class Sessions {
   int delta_pits;
   double pit_depth;
   double lumped_pits;
+  int pit_rows;
   int score;
   int tetrises;
   int level;
@@ -64,7 +65,8 @@ class Sessions {
     required this.delta_max_height,
     required this.delta_pits,
     required this.pit_depth,
-    required this.lumped_pits,
+    required this.lumped_pits, 
+    required this.pit_rows, 
     required this.max_height,
     required this.min_height,
     required this.avg_lat,
@@ -105,6 +107,7 @@ class Sessions {
         'delta_pits': delta_pits,
         'pit_depth': pit_depth,
         'lumped_pits': lumped_pits,
+        'pit_rows': pit_rows,
         'max_height': max_height,
         'min_height': min_height,
         'level': level,
@@ -150,6 +153,7 @@ class Sessions {
         delta_pits: json['delta_pits'] as int,
         pit_depth: json['pit_depth'] as double,
         lumped_pits: json['lumped_pits'] as double,
+        pit_rows: json['pit_rows'] as int,
         max_height: json['max_height'] as int,
         min_height: json['min_height'] as int,
         avg_lat: json['avg_lat'] as double,

@@ -1,10 +1,5 @@
 import 'package:backendless_sdk/backendless_sdk.dart';
-// import 'package:backendless_todo_starter/services/todo_service.dart';
-// import 'package:backendless_todo_starter/services/user_service.dart';
 import 'package:flutter/cupertino.dart';
-
-import 'routes/routes.dart';
-// import 'package:provider/provider.dart';
 
 class InitApp {
   static final String apiKeyAndroid = '20CE2D9E-0741-4C02-85D6-A8EE096E8443';

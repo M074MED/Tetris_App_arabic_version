@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui';
 import 'package:backendless_sdk/backendless_sdk.dart' as bkl;
 import 'package:collection/collection.dart';
 
@@ -18,16 +17,7 @@ import '../blocks/SQblock.dart';
 import '../blocks/Sblock.dart';
 import '../blocks/Tblock.dart';
 import '../blocks/Zblock.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
-import 'package:gradient_widgets/gradient_widgets.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
-
-import 'package:csv/csv.dart';
-import 'dart:io';
-// import 'package:ext_storage/ext_storage.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:external_path/external_path.dart';
 
 import 'home_page.dart';
 
@@ -77,6 +67,7 @@ class _GamePageState extends State<GamePage> {
   int delta_pits = 0;
   double pit_depth = 0;
   double lumped_pits = 0;
+  int pit_rows = 0;
   int wells_num = 0;
   int max_well = 0;
   int deep_wells = 0;
@@ -89,7 +80,12 @@ class _GamePageState extends State<GamePage> {
   int jaggedness = 0;
   double avg_lat = 0;
   double indValue = 0;
-  List<Color> indColor = [Colors.green, Colors.green];
+  List<Color> indColor = [
+    Colors.green,
+    Colors.yellow,
+    Colors.orange,
+    Colors.red,
+  ];
   int total_movements = 0;
   int total_rotations = 0;
   int total_translations = 0;
@@ -103,12 +99,6 @@ class _GamePageState extends State<GamePage> {
   int gameSpeed = 1000; // speed in milliseconds
   int tempGameSpeed = 1000; // speed in milliseconds
   String startButton = "Start";
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   startGame();
-  // }
 
   void startGame() {
     setState(() {
@@ -318,7 +308,8 @@ class _GamePageState extends State<GamePage> {
             (weighted_cells_avg * 0.050453956) +
             (minHeight * 0.050302274) +
             (row_transitions * 0.050216027) +
-            (pits_num * 0.046309109) +  // + (pit_rows_mean * 0.046244674) TODO
+            (pits_num * 0.046309109) +
+            (pit_rows * 0.046244674) +
             (landing_height * 0.045510476) +
             (column_transitions * 0.045442039) +
             (pit_depth * 0.04540702) +
@@ -346,14 +337,35 @@ class _GamePageState extends State<GamePage> {
             (cd_7 * 0.000487464) +
             (cd_8 * 0.000467453) +
             (cd_2 * 0.00022092));
+
+    if (indValue > 100) {
+      indValue = 100;
+    }
+
     if (indValue < 15) {
       HapticFeedback.lightImpact();
+      indColor = [
+        Colors.green,
+        Colors.yellow,
+        Colors.orange,
+        Colors.red,
+      ];
     } else if (indValue > 30 && indValue < 50) {
-      indColor.insert(0, Colors.yellow);
+      indColor = [
+        Colors.yellow,
+        Colors.orange,
+        Colors.red,
+      ];
     } else if (indValue > 50 && indValue < 70) {
-      indColor.insert(0, Colors.orange);
+      indColor = [
+        Colors.orange,
+        Colors.red,
+      ];
     } else if (indValue > 70 && indValue < 100) {
-      indColor.insert(0, Colors.red);
+      indColor = [
+        Colors.red,
+        Colors.red,
+      ];
     }
     print("indValue: $indValue");
   }
@@ -459,11 +471,13 @@ class _GamePageState extends State<GamePage> {
             (alivePointsXY.contains(Point(x + 1, y)) ||
                 pits.contains(Point(x + 1, y)) ||
                 (x == boardWidth - 1) ||
-                (!wells.contains(Point(x + 1, y)))) &&
+                ((!wells.contains(Point(x + 1, y))) &&
+                    !isColumnEmpty(alivePointsXY, x + 1, y))) &&
             (alivePointsXY.contains(Point(x - 1, y)) ||
                 pits.contains(Point(x - 1, y)) ||
                 (x == 0) ||
-                (!wells.contains(Point(x - 1, y))))) {
+                ((!wells.contains(Point(x - 1, y))) &&
+                    !isColumnEmpty(alivePointsXY, x - 1, y)))) {
           pits.add(currentPoint);
           pitCounter++;
         }
@@ -477,6 +491,8 @@ class _GamePageState extends State<GamePage> {
         pit_depth_list.add((pitCounter / pointCounter) * 1.25);
       }
     }
+
+    pit_depth = pit_depth_list.average;
 
     // TODO: Not work
     int pitsGroupCounter = 0;
@@ -501,9 +517,20 @@ class _GamePageState extends State<GamePage> {
       lumped_pits += (1 / i);
     }
 
-    pit_depth = pit_depth_list.average;
+    pit_rows = 0;
+    for (var y = boardHeight - 1; y >= 0; y--) {
+      for (var x = 0; x < boardWidth; x++) {
+        Point currentPoint = Point(x, y);
+        if (pits.contains(currentPoint)) {
+          pit_rows++;
+          break;
+        }
+      }
+    }
+
     print("PD" * 22);
-    print("$pit_depth || $pit_depth_list || $pitsGroupCounter || $lumped_pits");
+    print(
+        "$pit_depth || $pit_depth_list || $pitsGroupCounter || $lumped_pits || $pit_rows");
     print("PD" * 22);
 
     List<String> wellXTemp = [];
@@ -535,13 +562,7 @@ class _GamePageState extends State<GamePage> {
     print(
         "$max_well || $deep_wells || $cumulative_wells || $cumulative_wells_temp");
     print("W" * 50);
-    // Map<String, int> tempWells = {};
-    // wells.forEach((well) {
-    //   tempWells["${well.x}"] = 0;
-    // });
-    // wells.forEach((well) {
-    //   tempWells["${well.x}"] += 1;
-    // });
+
     pits_num = pits.length;
     wells_num = wells.length;
     print("Pits num: $pits_num, Wells num: $wells_num");
@@ -704,6 +725,7 @@ class _GamePageState extends State<GamePage> {
           delta_pits: delta_pits,
           pit_depth: pit_depth,
           lumped_pits: lumped_pits,
+          pit_rows: pit_rows,
           max_height: maxHeight,
           min_height: minHeight,
           wells: wells_num,
@@ -717,10 +739,10 @@ class _GamePageState extends State<GamePage> {
           username: usernameInput.text,
         ).toJson())
         .catchError((error, stackTrace) {
-      print(error.toString());
-      showSnackBar(context, error.toString());
+      print("Error: ${error.toString()}");
+      showSnackBar(context, "Server Error: ${error.toString()}");
     });
-    showSnackBar(context, "Session created!");
+    // showSnackBar(context, "Session created!");
   }
 
   // void writeCsvFile() async {
@@ -921,13 +943,8 @@ class _GamePageState extends State<GamePage> {
           "${currentBlock!.response_latency} | ${currentBlock!.drop_latency} | ${currentBlock!.initial_latency}");
       print("|" * 20);
 
-      // indValue += 15;
-
       changeIndData();
 
-      if (indValue > 100) {
-        indValue = 100;
-      }
       // Draw new block
       setState(() {
         // currentBlock!.movementNum = 0;
@@ -1038,9 +1055,9 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
+    // double screenHeight = MediaQuery.of(context).size.height;
 
-    double userInputFieldPadding = 190.0;
+    // double userInputFieldPadding = 190.0;
 
     width = (screenWidth / 6) * 3;
     height = width * 2.0;
@@ -1073,9 +1090,6 @@ class _GamePageState extends State<GamePage> {
             ),
             Text(
               "TETRIS",
-              // style: TextStyle(
-              //   fontSize: 12,
-              // ),
             ),
           ]),
         ),
@@ -1085,11 +1099,6 @@ class _GamePageState extends State<GamePage> {
         child:
             Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
           Container(
-            // decoration: const BoxDecoration(
-            //   gradient: LinearGradient(
-            //     colors: [Colors.blue, Colors.cyan],
-            //   ),
-            // ),
             child: Padding(
               padding: const EdgeInsets.all(3.0),
               child: Text(
@@ -1110,43 +1119,6 @@ class _GamePageState extends State<GamePage> {
                 children: [
                   Column(
                     children: [
-                      // SizedBox(
-                      //   width: 100,
-                      //   height: 200,
-                      //   child: Center(
-                      //     // child: RotatedBox(
-                      //     //   quarterTurns: -1,
-                      //     child: StepProgressIndicator(
-                      //       direction: Axis.vertical,
-                      //       totalSteps: 100,
-                      //       currentStep: (100 - indValue).round(),
-                      //       size: 30,
-                      //       padding: 0,
-                      //       // selectedColor: Colors.yellow,
-                      //       // unselectedColor: Colors.cyan,
-                      //       roundedEdges: const Radius.circular(10),
-                      //       selectedGradientColor: const LinearGradient(
-                      //         begin: Alignment.topLeft,
-                      //         end: Alignment.bottomRight,
-                      //         colors: [Colors.grey, Colors.transparent],
-                      //       ),
-                      //       unselectedGradientColor: LinearGradient(
-                      //         begin: Alignment.topLeft,
-                      //         end: Alignment.bottomRight,
-                      //         colors: indColor,
-                      //       ),
-                      //     ),
-                      //     // ),
-                      //     // child: FAProgressBar(
-                      //     //   size: 80,
-                      //     //   direction: Axis.vertical,
-                      //     //   verticalDirection: VerticalDirection.up,
-                      //     //   currentValue: indValue,
-                      //     //   displayText: '%',
-                      //     //   progressColor: Colors.green,
-                      //     // ),
-                      //   ),
-                      // ),
                       const SizedBox(height: 20),
                       Container(
                         child: Padding(
@@ -1213,57 +1185,6 @@ class _GamePageState extends State<GamePage> {
                           ),
                         ),
                       ),
-                      // const SizedBox(
-                      //   height: 30,
-                      // ),
-                      // Container(
-                      //   width: 100,
-                      //   height: 100,
-                      //   decoration: BoxDecoration(
-                      //     borderRadius:
-                      //         const BorderRadius.all(Radius.circular(10)),
-                      //     border: Border.all(color: Colors.transparent),
-                      //   ),
-                      //   child: Column(children: [
-                      //     Container(
-                      //       decoration: const BoxDecoration(
-                      //         borderRadius: BorderRadius.only(
-                      //           topRight: Radius.circular(10),
-                      //           topLeft: Radius.circular(10),
-                      //         ),
-                      //         gradient: LinearGradient(
-                      //           colors: [Colors.blue, Colors.cyan],
-                      //         ),
-                      //       ),
-                      //       child: Row(
-                      //         mainAxisAlignment: MainAxisAlignment.center,
-                      //         children: const [
-                      //           Padding(
-                      //             padding: EdgeInsets.all(8.0),
-                      //             child: Text(
-                      //               "Next",
-                      //               style: TextStyle(
-                      //                color: Colors.white,
-                      //                 fontSize: 16,
-                      //                 fontWeight: FontWeight.bold,
-                      //               ),
-                      //             ),
-                      //           ),
-                      //         ],
-                      //       ),
-                      //     ),
-                      //     const SizedBox(
-                      //       height: 5,
-                      //     ),
-                      //     Center(
-                      //       child: SizedBox(
-                      //         width: 100,
-                      //         height: 55,
-                      //         child: gameOver ? Container() : drawNextBlocks(),
-                      //       ),
-                      //     ),
-                      //   ]),
-                      // ),
                     ],
                   ),
                   const SizedBox(
@@ -1328,15 +1249,6 @@ class _GamePageState extends State<GamePage> {
                         ),
                         child: Column(children: [
                           Container(
-                            // decoration: const BoxDecoration(
-                            //   borderRadius: BorderRadius.only(
-                            //     topRight: Radius.circular(10),
-                            //     topLeft: Radius.circular(10),
-                            //   ),
-                            //   gradient: LinearGradient(
-                            //     colors: [Colors.blue, Colors.cyan],
-                            //   ),
-                            // ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: const [
@@ -1379,7 +1291,7 @@ class _GamePageState extends State<GamePage> {
                                 child: StepProgressIndicator(
                                   direction: Axis.vertical,
                                   totalSteps: 100,
-                                  currentStep: (100 - indValue).round(),
+                                  currentStep: indValue.round(),
                                   size: 30,
                                   padding: 0,
                                   // selectedColor: Colors.yellow,
@@ -1396,15 +1308,6 @@ class _GamePageState extends State<GamePage> {
                                     colors: indColor,
                                   ),
                                 ),
-                                // ),
-                                // child: FAProgressBar(
-                                //   size: 80,
-                                //   direction: Axis.vertical,
-                                //   verticalDirection: VerticalDirection.up,
-                                //   currentValue: indValue,
-                                //   displayText: '%',
-                                //   progressColor: Colors.green,
-                                // ),
                               ),
                             )
                           : Container(),
@@ -1429,6 +1332,7 @@ class _GamePageState extends State<GamePage> {
                             if (startButton == "Stop") {
                               setState(() {
                                 performAction = LastButtonPressed.left;
+                                checkForUserInput();
                               });
                               d_timer.add(DateTime.now());
                               calcInitialLat();
@@ -1446,6 +1350,7 @@ class _GamePageState extends State<GamePage> {
                             if (startButton == "Stop") {
                               setState(() {
                                 performAction = LastButtonPressed.right;
+                                checkForUserInput();
                               });
                               d_timer.add(DateTime.now());
                               calcInitialLat();
@@ -1544,6 +1449,7 @@ class _GamePageState extends State<GamePage> {
                     if (startButton == "Stop") {
                       setState(() {
                         performAction = LastButtonPressed.rotateLeft;
+                        checkForUserInput();
                       });
                       d_timer.add(DateTime.now());
                       calcInitialLat();
@@ -1561,6 +1467,7 @@ class _GamePageState extends State<GamePage> {
                     if (startButton == "Stop") {
                       setState(() {
                         performAction = LastButtonPressed.rotateRight;
+                        checkForUserInput();
                       });
                       d_timer.add(DateTime.now());
                       calcInitialLat();
