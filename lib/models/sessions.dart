@@ -35,7 +35,8 @@ class Sessions {
   double weighted_cells;
   int jaggedness;
   int wells;
-  String username;
+  double indicator_value;
+  String assigned_username;
   String? objectId;
   DateTime? created;
   DateTime? updated;
@@ -77,7 +78,8 @@ class Sessions {
     required this.weighted_cells,
     required this.jaggedness,
     required this.wells,
-    required this.username,
+    required this.indicator_value,
+    required this.assigned_username,
     this.objectId,
     this.created,
     this.updated,
@@ -120,7 +122,8 @@ class Sessions {
         'weighted_cells': weighted_cells,
         'jaggedness': jaggedness,
         'wells': wells,
-        'username': username,
+        'indicator_value': indicator_value,
+        'assigned_username': assigned_username,
         'created': created,
         'updated': updated,
         'objectId': objectId,
@@ -164,7 +167,8 @@ class Sessions {
         weighted_cells: json['weighted_cells'] as double,
         jaggedness: json['jaggedness'] as int,
         wells: json['wells'] as int,
-        username: json['username'] as String,
+        indicator_value: json['indicator_value'] as double,
+        assigned_username: json['assigned_username'] as String,
         objectId: json['objectId'] as String,
         created: json['created'] as DateTime,
         updated: json['updated'] as DateTime,

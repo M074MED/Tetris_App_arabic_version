@@ -5,6 +5,7 @@ import '../routes/routes.dart';
 
 final usernameInput = TextEditingController();
 bool showIndicator = true;
+bool showScore = true;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({
@@ -22,7 +23,7 @@ class _MyHomePageState extends State<MyHomePage> {
     InitApp.initializeApp(context);
   }
 
-  void toggleSwitch(bool value) {
+  void toggleSwitchForIndicator(bool value) {
     if (showIndicator == false) {
       setState(() {
         showIndicator = true;
@@ -30,6 +31,18 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       setState(() {
         showIndicator = false;
+      });
+    }
+  }
+  
+  void toggleSwitchForScore(bool value) {
+    if (showScore == false) {
+      setState(() {
+        showScore = true;
+      });
+    } else {
+      setState(() {
+        showScore = false;
       });
     }
   }
@@ -70,8 +83,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   Transform.scale(
                       scale: 2,
                       child: Switch(
-                        onChanged: toggleSwitch,
+                        onChanged: toggleSwitchForIndicator,
                         value: showIndicator,
+                        inactiveTrackColor: Colors.white,
+                      )),
+                ]),
+                const SizedBox(height: 5,),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Text(
+                    'Show Score',
+                    style: TextStyle(fontSize: 20, color: Colors.white),
+                  ),
+                  const SizedBox(
+                    width: 125,
+                  ),
+                  Transform.scale(
+                      scale: 2,
+                      child: Switch(
+                        onChanged: toggleSwitchForScore,
+                        value: showScore,
                         inactiveTrackColor: Colors.white,
                       )),
                 ]),

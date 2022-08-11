@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tetris_app/pages/home_page.dart';
 import 'game_page.dart';
 import '../blocks/block.dart';
 import '../blocks/Iblock.dart';
@@ -46,7 +47,7 @@ Widget getTetrisPoint(Color color) {
 Widget getGameOverText(int score) {
   return Center(
     child: Text(
-      "Game Over\nEnd Score:\n$score",
+      "Game Over${showScore? "\nEnd Score:\n$score" : ""}",
       textAlign: TextAlign.center,
       style: const TextStyle(
           color: Colors.blue,

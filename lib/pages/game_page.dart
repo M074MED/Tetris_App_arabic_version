@@ -9,6 +9,7 @@ import 'package:tetris_app/blocks/Iblock.dart';
 import 'package:tetris_app/blocks/Lblock.dart';
 import 'package:tetris_app/blocks/alivePoints.dart';
 import 'package:tetris_app/blocks/block.dart';
+import 'package:tetris_app/models/games.dart';
 import 'package:tetris_app/models/sessions.dart';
 import 'package:tetris_app/pages/helper.dart';
 
@@ -99,6 +100,44 @@ class _GamePageState extends State<GamePage> {
   int gameSpeed = 1000; // speed in milliseconds
   int tempGameSpeed = 1000; // speed in milliseconds
   String startButton = "Start";
+  Map<String, List<double>> averages = {
+    "pits": [],
+    "tetrises": [],
+    "score": [],
+    "level": [],
+    "lines": [],
+    "rotations": [],
+    "proportion_of_user_drops": [],
+    "minimum_rotation_difference": [],
+    "minimum_translation_difference": [],
+    "maximum_differences": [],
+    "initial_latency": [],
+    "drop_latency": [],
+    "response_latency": [],
+    "max_well": [],
+    "deep_wells": [],
+    "cumulative_wells": [],
+    "column_transitions": [],
+    "row_transitions": [],
+    "landing_height": [],
+    "matches": [],
+    "delta_max_height": [],
+    "delta_pits": [],
+    "pit_depth": [],
+    "lumped_pits": [],
+    "pit_rows": [],
+    "max_height": [],
+    "min_height": [],
+    "wells": [],
+    "avg_lat": [],
+    "cd_9": [],
+    "mean_height": [],
+    "pattern_div": [],
+    "total_movements": [],
+    "weighted_cells": [],
+    "jaggedness": [],
+    "indicator_value": [],
+  };
 
   void startGame() {
     setState(() {
@@ -696,6 +735,45 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  void fillAveragesMap() {
+    averages["pits"]!.add(pits_num.toDouble());
+    averages["tetrises"]!.add(tetrises.toDouble());
+    averages["score"]!.add(score.toDouble());
+    averages["level"]!.add(level.toDouble());
+    averages["lines"]!.add(lines.toDouble());
+    averages["rotations"]!.add(currentBlock!.rotateNum.toDouble());
+    averages["proportion_of_user_drops"]!.add(currentBlock!.proportion_of_user_drops);
+    averages["minimum_rotation_difference"]!.add(minimumRotationsDif.toDouble());
+    averages["minimum_translation_difference"]!.add(minimumTranslationsDif.toDouble());
+    averages["maximum_differences"]!.add(maximum_differences.toDouble());
+    averages["initial_latency"]!.add(currentBlock!.initial_latency.toDouble());
+    averages["drop_latency"]!.add(currentBlock!.drop_latency.toDouble());
+    averages["response_latency"]!.add(currentBlock!.response_latency.toDouble());
+    averages["max_well"]!.add(max_well.toDouble());
+    averages["deep_wells"]!.add(deep_wells.toDouble());
+    averages["cumulative_wells"]!.add(cumulative_wells);
+    averages["column_transitions"]!.add(column_transitions.toDouble());
+    averages["row_transitions"]!.add(row_transitions.toDouble());
+    averages["landing_height"]!.add(landing_height.toDouble());
+    averages["matches"]!.add(currentBlock!.matches.toDouble());
+    averages["delta_max_height"]!.add(delta_max_height.toDouble());
+    averages["delta_pits"]!.add(delta_pits.toDouble());
+    averages["pit_depth"]!.add(pit_depth);
+    averages["lumped_pits"]!.add(lumped_pits);
+    averages["pit_rows"]!.add(pit_rows.toDouble());
+    averages["max_height"]!.add(maxHeight.toDouble());
+    averages["min_height"]!.add(minHeight.toDouble());
+    averages["wells"]!.add(wells_num.toDouble());
+    averages["avg_lat"]!.add(avg_lat);
+    averages["cd_9"]!.add(cd_9.toDouble());
+    averages["mean_height"]!.add(meanHeight);
+    averages["pattern_div"]!.add(pattern_div);
+    averages["total_movements"]!.add(total_movements.toDouble());
+    averages["weighted_cells"]!.add(weighted_cells_avg);
+    averages["jaggedness"]!.add(jaggedness.toDouble());
+    averages["indicator_value"]!.add(indValue);
+  }
+
   void sendSessionData() async {
     await bkl.Backendless.data
         .of("Sessions")
@@ -736,13 +814,64 @@ class _GamePageState extends State<GamePage> {
           total_movements: total_movements,
           weighted_cells: weighted_cells_avg,
           jaggedness: jaggedness,
-          username: usernameInput.text,
+          indicator_value: indValue,
+          assigned_username: usernameInput.text,
         ).toJson())
         .catchError((error, stackTrace) {
       print("Error: ${error.toString()}");
       showSnackBar(context, "Server Error: ${error.toString()}");
     });
     // showSnackBar(context, "Session created!");
+  }
+  
+  void sendAverages() async {
+    await bkl.Backendless.data
+        .of("Games")
+        .save(Games(
+          avg_pits: averages["pits"]!.average,
+          avg_tetrises: averages["tetrises"]!.average,
+          avg_score: averages["score"]!.average,
+          avg_level: averages["level"]!.average,
+          avg_lines: averages["lines"]!.average,
+          game: game,
+          avg_rotations: averages["rotations"]!.average,
+          avg_proportion_of_user_drops: averages["proportion_of_user_drops"]!.average,
+          avg_minimum_rotation_difference: averages["minimum_rotation_difference"]!.average,
+          avg_minimum_translation_difference: averages["minimum_translation_difference"]!.average,
+          avg_maximum_differences: averages["maximum_differences"]!.average,
+          avg_initial_latency: averages["initial_latency"]!.average,
+          avg_drop_latency: averages["drop_latency"]!.average,
+          avg_response_latency: averages["response_latency"]!.average,
+          avg_max_well: averages["max_well"]!.average,
+          avg_deep_wells: averages["deep_wells"]!.average,
+          avg_cumulative_wells: averages["cumulative_wells"]!.average,
+          avg_column_transitions: averages["column_transitions"]!.average,
+          avg_row_transitions: averages["row_transitions"]!.average,
+          avg_landing_height: averages["landing_height"]!.average,
+          avg_matches: averages["matches"]!.average,
+          avg_delta_max_height: averages["delta_max_height"]!.average,
+          avg_delta_pits: averages["delta_pits"]!.average,
+          avg_pit_depth: averages["pit_depth"]!.average,
+          avg_lumped_pits: averages["lumped_pits"]!.average,
+          avg_pit_rows: averages["pit_rows"]!.average,
+          avg_max_height: averages["max_height"]!.average,
+          avg_min_height: averages["min_height"]!.average,
+          avg_wells: averages["wells"]!.average,
+          avg_lat: averages["avg_lat"]!.average,
+          avg_cd_9: averages["cd_9"]!.average,
+          avg_mean_height: averages["mean_height"]!.average,
+          avg_pattern_div: averages["pattern_div"]!.average,
+          avg_total_movements: averages["total_movements"]!.average,
+          avg_weighted_cells: averages["weighted_cells"]!.average,
+          avg_jaggedness: averages["jaggedness"]!.average,
+          avg_indicator_value: averages["indicator_value"]!.average,
+          assigned_username: usernameInput.text,
+        ).toJson())
+        .catchError((error, stackTrace) {
+      print("Error: ${error.toString()}");
+      showSnackBar(context, "Server Error: ${error.toString()}");
+    });
+    // showSnackBar(context, "Game created!");
   }
 
   // void writeCsvFile() async {
@@ -899,11 +1028,11 @@ class _GamePageState extends State<GamePage> {
 
     if (playerLost()) {
       gameOver = true;
-      // try {
-      //   sendSessionData();
-      // } catch (e) {
-      //   print("$e");
-      // }
+      try {
+        sendAverages();
+      } catch (e) {
+        print("$e");
+      }
     }
     // Check if the current block is at the bottom or above an old block
     if (currentBlock!.isAtBottom() || isAboveOldBlock()) {
@@ -944,7 +1073,15 @@ class _GamePageState extends State<GamePage> {
       print("|" * 20);
 
       changeIndData();
-
+      
+      // send data
+      try {
+        fillAveragesMap();
+        sendSessionData();
+      } catch (e) {
+        print("$e");
+      }
+      
       // Draw new block
       setState(() {
         // currentBlock!.movementNum = 0;
@@ -954,17 +1091,12 @@ class _GamePageState extends State<GamePage> {
       });
       drawBlockDate = DateTime.now();
       // sendSessionData();
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Future.delayed(const Duration(milliseconds: 1000), () {
         setState(() {
           borderColor = Colors.white;
         });
       });
-      // send data
-      try {
-        sendSessionData();
-      } catch (e) {
-        print("$e");
-      }
+      
     } else {
       setState(() {
         currentBlock!.move(MoveDir.down);
@@ -1102,7 +1234,7 @@ class _GamePageState extends State<GamePage> {
             child: Padding(
               padding: const EdgeInsets.all(3.0),
               child: Text(
-                "Score: $score",
+                showScore ? "Score: $score" : "",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 17,
@@ -1208,11 +1340,57 @@ class _GamePageState extends State<GamePage> {
                                 ),
                                 ElevatedButton(
                                   onPressed: () {
+                                    // reset some values
                                     gameOver = false;
                                     score = 0;
                                     lines = 0;
                                     tetrises = 0;
                                     level = 0;
+                                    indValue = 0;
+                                    indColor = [
+                                      Colors.green,
+                                      Colors.yellow,
+                                      Colors.orange,
+                                      Colors.red,
+                                    ];
+                                    averages = {
+                                      "pits": [],
+                                      "tetrises": [],
+                                      "score": [],
+                                      "level": [],
+                                      "lines": [],
+                                      "rotations": [],
+                                      "proportion_of_user_drops": [],
+                                      "minimum_rotation_difference": [],
+                                      "minimum_translation_difference": [],
+                                      "maximum_differences": [],
+                                      "initial_latency": [],
+                                      "drop_latency": [],
+                                      "response_latency": [],
+                                      "max_well": [],
+                                      "deep_wells": [],
+                                      "cumulative_wells": [],
+                                      "column_transitions": [],
+                                      "row_transitions": [],
+                                      "landing_height": [],
+                                      "matches": [],
+                                      "delta_max_height": [],
+                                      "delta_pits": [],
+                                      "pit_depth": [],
+                                      "lumped_pits": [],
+                                      "pit_rows": [],
+                                      "max_height": [],
+                                      "min_height": [],
+                                      "wells": [],
+                                      "avg_lat": [],
+                                      "cd_9": [],
+                                      "mean_height": [],
+                                      "pattern_div": [],
+                                      "total_movements": [],
+                                      "weighted_cells": [],
+                                      "jaggedness": [],
+                                      "indicator_value": [],
+                                    };
                                     setState(() {
                                       game++;
                                       alivePoints
@@ -1341,6 +1519,8 @@ class _GamePageState extends State<GamePage> {
                           child: const Icon(
                             Icons.arrow_left,
                           ),
+                          style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(65, 45)),
                         ),
                       ),
                       Padding(
@@ -1359,12 +1539,14 @@ class _GamePageState extends State<GamePage> {
                           child: const Icon(
                             Icons.arrow_right,
                           ),
+                          style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(65, 45)),
                         ),
                       ),
                     ],
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(0.0),
+                    padding: const EdgeInsets.only(bottom: 40),
                     child: GestureDetector(
                       onTapDown: (details) {
                         if (startButton == "Stop") {
@@ -1406,13 +1588,16 @@ class _GamePageState extends State<GamePage> {
                         child: const Icon(
                           Icons.arrow_drop_down,
                         ),
+                        style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(65, 45)),
                       ),
                     ),
                   ),
                 ],
               ),
               Padding(
-                padding: const EdgeInsets.all(3.0),
+                padding: const EdgeInsets.only(
+                    bottom: 93, top: 3, left: 3, right: 3),
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -1432,18 +1617,19 @@ class _GamePageState extends State<GamePage> {
                   child: Text(
                     startButton,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
                     shape: const CircleBorder(),
                     primary: Colors.red,
-                    minimumSize: const Size(40, 40),
+                    minimumSize: const Size(70, 70),
                   ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(3.0),
+                padding: const EdgeInsets.only(
+                    bottom: 93, top: 3, left: 3, right: 3),
                 child: ElevatedButton(
                   onPressed: () {
                     if (startButton == "Stop") {
@@ -1458,10 +1644,13 @@ class _GamePageState extends State<GamePage> {
                   child: const Icon(
                     Icons.rotate_left,
                   ),
+                  style:
+                      ElevatedButton.styleFrom(minimumSize: const Size(65, 45)),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(3.0),
+                padding: const EdgeInsets.only(
+                    bottom: 93, top: 3, left: 3, right: 3),
                 child: ElevatedButton(
                   onPressed: () {
                     if (startButton == "Stop") {
@@ -1476,6 +1665,8 @@ class _GamePageState extends State<GamePage> {
                   child: const Icon(
                     Icons.rotate_right,
                   ),
+                  style:
+                      ElevatedButton.styleFrom(minimumSize: const Size(65, 45)),
                 ),
               ),
             ],
