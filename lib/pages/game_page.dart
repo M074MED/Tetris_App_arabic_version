@@ -23,6 +23,7 @@ import 'package:step_progress_indicator/step_progress_indicator.dart';
 import 'home_page.dart';
 
 enum LastButtonPressed { left, right, rotateLeft, rotateRight, none }
+
 enum MoveDir { left, right, down }
 
 // Global Variables
@@ -33,6 +34,7 @@ double width = boardWidth * pointSize;
 double height = boardHeight * pointSize;
 
 late Timer timer;
+late Timer moveTimer;
 
 class GamePage extends StatefulWidget {
   const GamePage({Key? key}) : super(key: key);
@@ -102,10 +104,6 @@ class _GamePageState extends State<GamePage> {
   String startButton = "Start";
   Map<String, List<double>> averages = {
     "pits": [],
-    "tetrises": [],
-    "score": [],
-    "level": [],
-    "lines": [],
     "rotations": [],
     "proportion_of_user_drops": [],
     "minimum_rotation_difference": [],
@@ -159,7 +157,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  void checkForUserInput() {
+  void checkForUserInput(Timer? time) {
     if (performAction != LastButtonPressed.none) {
       setState(() {
         switch (performAction) {
@@ -198,7 +196,7 @@ class _GamePageState extends State<GamePage> {
           default:
             break;
         }
-        performAction = LastButtonPressed.none;
+        // performAction = LastButtonPressed.none;
       });
     }
   }
@@ -284,30 +282,30 @@ class _GamePageState extends State<GamePage> {
       if (counter >= boardWidth) {
         fullLines++;
       }
-      switch (fullLines) {
-        case 1:
-          setState(() {
-            score += 40 * (level + 1);
-          });
-          break;
-        case 2:
-          setState(() {
-            score += 100 * (level + 1);
-          });
-          break;
-        case 3:
-          setState(() {
-            score += 300 * (level + 1);
-          });
-          break;
-        case 4:
-          setState(() {
-            tetrises++;
-            score += 1200 * (level + 1);
-          });
-          break;
-        default:
-      }
+    }
+    switch (fullLines) {
+      case 1:
+        setState(() {
+          score += 40 * (level + 1);
+        });
+        break;
+      case 2:
+        setState(() {
+          score += 100 * (level + 1);
+        });
+        break;
+      case 3:
+        setState(() {
+          score += 300 * (level + 1);
+        });
+        break;
+      case 4:
+        setState(() {
+          tetrises++;
+          score += 1200 * (level + 1);
+        });
+        break;
+      default:
     }
   }
 
@@ -737,18 +735,18 @@ class _GamePageState extends State<GamePage> {
 
   void fillAveragesMap() {
     averages["pits"]!.add(pits_num.toDouble());
-    averages["tetrises"]!.add(tetrises.toDouble());
-    averages["score"]!.add(score.toDouble());
-    averages["level"]!.add(level.toDouble());
-    averages["lines"]!.add(lines.toDouble());
     averages["rotations"]!.add(currentBlock!.rotateNum.toDouble());
-    averages["proportion_of_user_drops"]!.add(currentBlock!.proportion_of_user_drops);
-    averages["minimum_rotation_difference"]!.add(minimumRotationsDif.toDouble());
-    averages["minimum_translation_difference"]!.add(minimumTranslationsDif.toDouble());
+    averages["proportion_of_user_drops"]!
+        .add(currentBlock!.proportion_of_user_drops);
+    averages["minimum_rotation_difference"]!
+        .add(minimumRotationsDif.toDouble());
+    averages["minimum_translation_difference"]!
+        .add(minimumTranslationsDif.toDouble());
     averages["maximum_differences"]!.add(maximum_differences.toDouble());
     averages["initial_latency"]!.add(currentBlock!.initial_latency.toDouble());
     averages["drop_latency"]!.add(currentBlock!.drop_latency.toDouble());
-    averages["response_latency"]!.add(currentBlock!.response_latency.toDouble());
+    averages["response_latency"]!
+        .add(currentBlock!.response_latency.toDouble());
     averages["max_well"]!.add(max_well.toDouble());
     averages["deep_wells"]!.add(deep_wells.toDouble());
     averages["cumulative_wells"]!.add(cumulative_wells);
@@ -823,21 +821,24 @@ class _GamePageState extends State<GamePage> {
     });
     // showSnackBar(context, "Session created!");
   }
-  
+
   void sendAverages() async {
     await bkl.Backendless.data
         .of("Games")
         .save(Games(
           avg_pits: averages["pits"]!.average,
-          avg_tetrises: averages["tetrises"]!.average,
-          avg_score: averages["score"]!.average,
-          avg_level: averages["level"]!.average,
-          avg_lines: averages["lines"]!.average,
+          total_tetrises: tetrises,
+          final_score: score,
+          level_reached: level,
+          total_lines_cleared: lines,
           game: game,
           avg_rotations: averages["rotations"]!.average,
-          avg_proportion_of_user_drops: averages["proportion_of_user_drops"]!.average,
-          avg_minimum_rotation_difference: averages["minimum_rotation_difference"]!.average,
-          avg_minimum_translation_difference: averages["minimum_translation_difference"]!.average,
+          avg_proportion_of_user_drops:
+              averages["proportion_of_user_drops"]!.average,
+          avg_minimum_rotation_difference:
+              averages["minimum_rotation_difference"]!.average,
+          avg_minimum_translation_difference:
+              averages["minimum_translation_difference"]!.average,
           avg_maximum_differences: averages["maximum_differences"]!.average,
           avg_initial_latency: averages["initial_latency"]!.average,
           avg_drop_latency: averages["drop_latency"]!.average,
@@ -1073,15 +1074,15 @@ class _GamePageState extends State<GamePage> {
       print("|" * 20);
 
       changeIndData();
-      
+
       // send data
+      fillAveragesMap();
       try {
-        fillAveragesMap();
         sendSessionData();
       } catch (e) {
         print("$e");
       }
-      
+
       // Draw new block
       setState(() {
         // currentBlock!.movementNum = 0;
@@ -1096,7 +1097,6 @@ class _GamePageState extends State<GamePage> {
           borderColor = Colors.white;
         });
       });
-      
     } else {
       setState(() {
         currentBlock!.move(MoveDir.down);
@@ -1355,10 +1355,6 @@ class _GamePageState extends State<GamePage> {
                                     ];
                                     averages = {
                                       "pits": [],
-                                      "tetrises": [],
-                                      "score": [],
-                                      "level": [],
-                                      "lines": [],
                                       "rotations": [],
                                       "proportion_of_user_drops": [],
                                       "minimum_rotation_difference": [],
@@ -1505,42 +1501,78 @@ class _GamePageState extends State<GamePage> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(3.0),
-                        child: ElevatedButton(
-                          onPressed: () {
+                        child: GestureDetector(
+                          onTapDown: (details) {
                             if (startButton == "Stop") {
-                              setState(() {
-                                performAction = LastButtonPressed.left;
-                                checkForUserInput();
-                              });
+                              performAction = LastButtonPressed.left;
                               d_timer.add(DateTime.now());
                               calcInitialLat();
+                              moveTimer = Timer.periodic(
+                                const Duration(milliseconds: 50),
+                                checkForUserInput,
+                              );
                             }
                           },
-                          child: const Icon(
-                            Icons.arrow_left,
+                          onTapCancel: () {
+                            moveTimer.cancel();
+                            performAction = LastButtonPressed.none;
+                          },
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (startButton == "Stop") {
+                                d_timer.add(DateTime.now());
+                                calcInitialLat();
+                                setState(() {
+                                  performAction = LastButtonPressed.left;
+                                  checkForUserInput(null);
+                                  performAction = LastButtonPressed.none;
+                                });
+                              }
+                            },
+                            child: const Icon(
+                              Icons.arrow_left,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(65, 45)),
                           ),
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(65, 45)),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(3.0),
-                        child: ElevatedButton(
-                          onPressed: () {
+                        child: GestureDetector(
+                          onTapDown: (details) {
                             if (startButton == "Stop") {
-                              setState(() {
-                                performAction = LastButtonPressed.right;
-                                checkForUserInput();
-                              });
+                              performAction = LastButtonPressed.right;
                               d_timer.add(DateTime.now());
                               calcInitialLat();
+                              moveTimer = Timer.periodic(
+                                const Duration(milliseconds: 50),
+                                checkForUserInput,
+                              );
                             }
                           },
-                          child: const Icon(
-                            Icons.arrow_right,
+                          onTapCancel: () {
+                            moveTimer.cancel();
+                            performAction = LastButtonPressed.none;
+                          },
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (startButton == "Stop") {
+                                d_timer.add(DateTime.now());
+                                calcInitialLat();
+                                setState(() {
+                                  performAction = LastButtonPressed.right;
+                                  checkForUserInput(null);
+                                  performAction = LastButtonPressed.none;
+                                });
+                              }
+                            },
+                            child: const Icon(
+                              Icons.arrow_right,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(65, 45)),
                           ),
-                          style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(65, 45)),
                         ),
                       ),
                     ],
@@ -1633,12 +1665,13 @@ class _GamePageState extends State<GamePage> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (startButton == "Stop") {
-                      setState(() {
-                        performAction = LastButtonPressed.rotateLeft;
-                        checkForUserInput();
-                      });
                       d_timer.add(DateTime.now());
                       calcInitialLat();
+                      setState(() {
+                        performAction = LastButtonPressed.rotateLeft;
+                        checkForUserInput(null);
+                        performAction = LastButtonPressed.none;
+                      });
                     }
                   },
                   child: const Icon(
@@ -1654,12 +1687,13 @@ class _GamePageState extends State<GamePage> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (startButton == "Stop") {
-                      setState(() {
-                        performAction = LastButtonPressed.rotateRight;
-                        checkForUserInput();
-                      });
                       d_timer.add(DateTime.now());
                       calcInitialLat();
+                      setState(() {
+                        performAction = LastButtonPressed.rotateRight;
+                        checkForUserInput(null);
+                        performAction = LastButtonPressed.none;
+                      });
                     }
                   },
                   child: const Icon(

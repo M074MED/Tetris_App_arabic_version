@@ -20,10 +20,10 @@ class Games {
   double avg_pit_depth;
   double avg_lumped_pits;
   double avg_pit_rows;
-  double avg_score;
-  double avg_tetrises;
-  double avg_level;
-  double avg_lines;
+  int final_score;
+  int total_tetrises;
+  int level_reached;
+  int total_lines_cleared;
   int game;
   double avg_lat;
   double avg_cd_9;
@@ -43,10 +43,10 @@ class Games {
 
   Games({
     required this.avg_pits,
-    required this.avg_tetrises,
-    required this.avg_level,
-    required this.avg_lines,
-    required this.avg_score,
+    required this.total_tetrises,
+    required this.level_reached,
+    required this.total_lines_cleared,
+    required this.final_score,
     required this.game,
     required this.avg_rotations,
     required this.avg_proportion_of_user_drops,
@@ -87,8 +87,8 @@ class Games {
 
   Map<String, Object?> toJson() => {
         'avg_pits': avg_pits,
-        'avg_tetrises': avg_tetrises,
-        'avg_score': avg_score,
+        'total_tetrises': total_tetrises,
+        'final_score': final_score,
         'game': game,
         'avg_rotations': avg_rotations,
         'avg_proportion_of_user_drops': avg_proportion_of_user_drops,
@@ -112,8 +112,8 @@ class Games {
         'avg_pit_rows': avg_pit_rows,
         'avg_max_height': avg_max_height,
         'avg_min_height': avg_min_height,
-        'avg_level': avg_level,
-        'avg_lines': avg_lines,
+        'level_reached': level_reached,
+        'total_lines_cleared': total_lines_cleared,
         'avg_lat': avg_lat,
         'avg_cd_9': avg_cd_9,
         'avg_mean_height': avg_mean_height,
@@ -131,11 +131,11 @@ class Games {
 
   static Games fromJson(Map<dynamic, dynamic>? json) => Games(
         avg_pits: json!['avg_pits'] as double,
-        avg_score: json['avg_score'] as double,
+        final_score: json['final_score'] as int,
         game: json['game'] as int,
-        avg_lines: json['avg_lines'] as double,
-        avg_level: json['avg_level'] as double,
-        avg_tetrises: json['avg_tetrises'] as double,
+        total_lines_cleared: json['total_lines_cleared'] as int,
+        level_reached: json['level_reached'] as int,
+        total_tetrises: json['total_tetrises'] as int,
         avg_rotations: json['avg_rotations'] as double,
         avg_proportion_of_user_drops: json['avg_proportion_of_user_drops'] as double,
         avg_minimum_rotation_difference: json['avg_minimum_rotation_difference'] as double,
