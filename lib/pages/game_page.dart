@@ -817,7 +817,7 @@ class _GamePageState extends State<GamePage> {
         ).toJson())
         .catchError((error, stackTrace) {
       print("Error: ${error.toString()}");
-      showSnackBar(context, "Server Error: ${error.toString()}");
+      showSnackBar(context, "خطأ في الخادم:\n${error.toString()}");
     });
     // showSnackBar(context, "Session created!");
   }
@@ -870,7 +870,7 @@ class _GamePageState extends State<GamePage> {
         ).toJson())
         .catchError((error, stackTrace) {
       print("Error: ${error.toString()}");
-      showSnackBar(context, "Server Error: ${error.toString()}");
+      showSnackBar(context, "خطأ في الخادم:\n${error.toString()}");
     });
     // showSnackBar(context, "Game created!");
   }
@@ -1037,7 +1037,9 @@ class _GamePageState extends State<GamePage> {
     }
     // Check if the current block is at the bottom or above an old block
     if (currentBlock!.isAtBottom() || isAboveOldBlock()) {
-      changeBorderColor();
+      if (showIndicator) {
+        changeBorderColor();
+      }
       // Calculate matches
       calcMatches();
       // Save the block
@@ -1233,14 +1235,17 @@ class _GamePageState extends State<GamePage> {
           Container(
             child: Padding(
               padding: const EdgeInsets.all(3.0),
-              child: Text(
-                showScore ? "Score: $score" : "",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: Text(
+                  showScore ? "النتيجة: $score" : "",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -1255,14 +1260,17 @@ class _GamePageState extends State<GamePage> {
                       Container(
                         child: Padding(
                           padding: const EdgeInsets.all(3.0),
-                          child: Text(
-                            "Tetrises\n$tetrises",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Text(
+                              "المكعبات\n$tetrises",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -1272,14 +1280,17 @@ class _GamePageState extends State<GamePage> {
                       Container(
                         child: Padding(
                           padding: const EdgeInsets.all(3.0),
-                          child: Text(
-                            "Lines\n$lines",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Text(
+                              "الصفوف\n$lines",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -1289,14 +1300,17 @@ class _GamePageState extends State<GamePage> {
                       Container(
                         child: Padding(
                           padding: const EdgeInsets.all(3.0),
-                          child: Text(
-                            "Level\n$level",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Text(
+                              "المستوى\n$level",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -1306,14 +1320,17 @@ class _GamePageState extends State<GamePage> {
                       Container(
                         child: Padding(
                           padding: const EdgeInsets.all(3.0),
-                          child: Text(
-                            "Game\n$game",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Text(
+                              "الجولات\n$game",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -1395,11 +1412,14 @@ class _GamePageState extends State<GamePage> {
                                     timer.cancel();
                                     startGame();
                                   },
-                                  child: const Text(
-                                    "Try Again",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                  child: const Directionality(
+                                    textDirection: TextDirection.rtl,
+                                    child: Text(
+                                      "حاول ثانيتاً",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -1428,12 +1448,15 @@ class _GamePageState extends State<GamePage> {
                               children: const [
                                 Padding(
                                   padding: EdgeInsets.all(3.0),
-                                  child: Text(
-                                    "Next",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                  child: Directionality(
+                                    textDirection: TextDirection.rtl,
+                                    child: Text(
+                                      "التالي",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1646,10 +1669,13 @@ class _GamePageState extends State<GamePage> {
                       }
                     });
                   },
-                  child: Text(
-                    startButton,
-                    style: const TextStyle(
-                      fontSize: 17,
+                  child: Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Text(
+                      startButton == "Start" ? "تشغيل" : "إيقاف",
+                      style: const TextStyle(
+                        fontSize: 17,
+                      ),
                     ),
                   ),
                   style: ElevatedButton.styleFrom(

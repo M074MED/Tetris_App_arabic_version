@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     return const MaterialApp(
-      title: 'Tetris App',
+      title: 'Tetris App (Arabic Version)',
       debugShowCheckedModeBanner: false,
       initialRoute: RouteManager.homePage,
       onGenerateRoute: RouteManager.generateRoute,

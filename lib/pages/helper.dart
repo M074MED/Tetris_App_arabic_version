@@ -46,20 +46,23 @@ Widget getTetrisPoint(Color color) {
 
 Widget getGameOverText(int score) {
   return Center(
-    child: Text(
-      "Game Over${showScore? "\nEnd Score:\n$score" : ""}",
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-          color: Colors.blue,
-          fontSize: 33,
-          fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(
-              color: Colors.black,
-              blurRadius: 3,
-              offset: Offset(2, 2),
-            )
-          ]),
+    child: Directionality(
+      textDirection: TextDirection.rtl,
+      child: Text(
+        "انتهت اللعبة${showScore ? "\nالنتيجة النهائية:\n" + score.toString() : ""}",
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+            color: Colors.blue,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                color: Colors.black,
+                blurRadius: 3,
+                offset: Offset(2, 2),
+              )
+            ]),
+      ),
     ),
   );
 }
@@ -74,7 +77,10 @@ void showSnackBar(BuildContext context, String message) {
       topRight: Radius.circular(5),
     )),
     backgroundColor: Colors.red,
-    content: Text(message),
+    content: Directionality(
+      textDirection: TextDirection.rtl,
+      child: Text(message),
+    ),
   );
   ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }
