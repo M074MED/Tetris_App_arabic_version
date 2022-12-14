@@ -817,7 +817,7 @@ class _GamePageState extends State<GamePage> {
         ).toJson())
         .catchError((error, stackTrace) {
       print("Error: ${error.toString()}");
-      showSnackBar(context, "خطأ في الخادم:\n${error.toString()}");
+      // showSnackBar(context, "خطأ في الخادم:\n${error.toString()}");
     });
     // showSnackBar(context, "Session created!");
   }
@@ -870,7 +870,7 @@ class _GamePageState extends State<GamePage> {
         ).toJson())
         .catchError((error, stackTrace) {
       print("Error: ${error.toString()}");
-      showSnackBar(context, "خطأ في الخادم:\n${error.toString()}");
+      // showSnackBar(context, "خطأ في الخادم:\n${error.toString()}");
     });
     // showSnackBar(context, "Game created!");
   }
@@ -1254,88 +1254,90 @@ class _GamePageState extends State<GamePage> {
             children: [
               Row(
                 children: [
-                  Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      Container(
-                        child: Padding(
-                          padding: const EdgeInsets.all(3.0),
-                          child: Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: Text(
-                              "المكعبات\n$tetrises",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                  showScore
+                      ? Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            Container(
+                              child: Padding(
+                                padding: const EdgeInsets.all(3.0),
+                                child: Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: Text(
+                                    "المكعبات\n$tetrises",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 40,
-                      ),
-                      Container(
-                        child: Padding(
-                          padding: const EdgeInsets.all(3.0),
-                          child: Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: Text(
-                              "الصفوف\n$lines",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                            const SizedBox(
+                              height: 40,
+                            ),
+                            Container(
+                              child: Padding(
+                                padding: const EdgeInsets.all(3.0),
+                                child: Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: Text(
+                                    "الصفوف\n$lines",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 40,
-                      ),
-                      Container(
-                        child: Padding(
-                          padding: const EdgeInsets.all(3.0),
-                          child: Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: Text(
-                              "المستوى\n$level",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                            const SizedBox(
+                              height: 40,
+                            ),
+                            Container(
+                              child: Padding(
+                                padding: const EdgeInsets.all(3.0),
+                                child: Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: Text(
+                                    "المستوى\n$level",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 40,
-                      ),
-                      Container(
-                        child: Padding(
-                          padding: const EdgeInsets.all(3.0),
-                          child: Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: Text(
-                              "الجولات\n$game",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                            const SizedBox(
+                              height: 40,
+                            ),
+                            Container(
+                              child: Padding(
+                                padding: const EdgeInsets.all(3.0),
+                                child: Directionality(
+                                  textDirection: TextDirection.rtl,
+                                  child: Text(
+                                    "الجولات\n$game",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                          ],
+                        )
+                      : Container(),
                   const SizedBox(
                     width: 10,
                   ),
